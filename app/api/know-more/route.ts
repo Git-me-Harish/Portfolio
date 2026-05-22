@@ -50,7 +50,7 @@ const MODEL_CHAIN: ReadonlyArray<{ id: string; maxRetries: number }> = [
  *   529  Overloaded          — Gemini-specific alias for 503 */
 const RETRYABLE_STATUSES = new Set([429, 500, 503, 529])
 
-/* Hard failures — no point retrying the same model. */
+//Hard failures — no point retrying the same model:
 const SKIP_MODEL_STATUSES = new Set([404, 400, 401, 403])
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
