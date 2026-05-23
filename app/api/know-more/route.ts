@@ -37,20 +37,26 @@ import { NextRequest } from 'next/server'
 export const runtime = 'edge'
 export const maxDuration = 60
 
-// Constants:
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+/** Models tried in order. Each entry carries its own retry budget. */
 const MODEL_CHAIN: ReadonlyArray<{ id: string; maxRetries: number }> = [
   { id: 'gemini-2.5-flash',      maxRetries: 2 },
   { id: 'gemini-2.5-flash-lite', maxRetries: 2 },
-  { id: 'gemini-2.0-flash',      maxRetries: 3 },
+  { id: 'gemini-2.0-flash',      maxRetries: 3 }, // most available → more retries
 ]
 
-/*   429  Too Many Requests   — rate-limited; respect Retry-After
+/**
+ * HTTP status codes that are transient — we retry on these.
+ * Everything else is a hard failure (skip to next model or surface error).
+ *   429  Too Many Requests   — rate-limited; respect Retry-After
  *   500  Internal Error      — provider-side transient
  *   503  Service Unavailable — overloaded (the error you hit)
- *   529  Overloaded          — Gemini-specific alias for 503 */
+ *   529  Overloaded          — Gemini-specific alias for 503
+ */
 const RETRYABLE_STATUSES = new Set([429, 500, 503, 529])
 
-//Hard failures — no point retrying the same model:
+/** Hard failures — no point retrying the same model. */
 const SKIP_MODEL_STATUSES = new Set([404, 400, 401, 403])
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
@@ -63,7 +69,8 @@ const PROFILES = {
   huggingface:     'https://huggingface.co/meHarish182004',
 } as const
 
-// Types:
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type Platform = 'github' | 'linkedin' | 'kaggle' | 'huggingface' | 'web'
 
 interface GeminiContent {
@@ -80,17 +87,23 @@ interface GeminiChunk {
   error?: { code: number; message: string; status: string }
 }
 
-//Result of a single model attempt:
+/** Result of a single model attempt */
 type ModelResult =
   | { type: 'ok';          response: Response; modelId: string }
-  | { type: 'skip';        reason: string }  
-  | { type: 'exhausted';   reason: string } 
+  | { type: 'skip';        reason: string }   // hard error — move to next model
+  | { type: 'exhausted';   reason: string }   // retries used up — move to next model
 
-// SSE helper 
+// ── SSE helper ────────────────────────────────────────────────────────────────
+
 const enc = new TextEncoder()
 const sse = (data: string) => enc.encode(`data: ${data}\n\n`)
 
-// Backoff helper:
+// ── Backoff helper ────────────────────────────────────────────────────────────
+
+/**
+ * Exponential backoff with jitter.
+ * Respects Retry-After header when present (Gemini sends this on 429).
+ */
 async function backoff(attempt: number, retryAfterHeader?: string | null): Promise<void> {
   let ms: number
 
@@ -106,7 +119,8 @@ async function backoff(attempt: number, retryAfterHeader?: string | null): Promi
   await new Promise(r => setTimeout(r, ms))
 }
 
-// Platform detection:
+// ── Platform detection ────────────────────────────────────────────────────────
+
 function detectPlatform(query: string): Platform {
   const q = query.toLowerCase()
   if (/github|repo|repositor|commit|fork|star|gist|pull.?request|open.?source/.test(q)) return 'github'
@@ -321,7 +335,15 @@ ${platformBlock[platform]}
 - Stay on-topic; redirect unrelated questions back to Harish's work.`
 }
 
-// Gemini caller with per-model retry:
+// ── Gemini caller with per-model retry ───────────────────────────────────────
+
+/**
+ * Tries a single Gemini model with exponential-backoff retries on transient errors.
+ * Returns:
+ *   { type: 'ok', response }      — streaming response ready to consume
+ *   { type: 'skip' }              — hard error; caller should try next model
+ *   { type: 'exhausted' }         — retries used up; caller should try next model
+ */
 async function tryModel(
   modelId: string,
   apiKey: string,
