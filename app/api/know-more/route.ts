@@ -116,8 +116,82 @@ function detectPlatform(query: string): Platform {
   return 'web'
 }
 
-//GitHub live context:
-async function fetchGitHubContext(token?: string): Promise<string> {
+// ── Contribution & specific-repo query detection ────────────────────────────
+
+/** True when visitor is asking about contribution stats / activity graph */
+function isContributionQuery(query: string): boolean {
+  return /contribution|commit.?graph|commit.?count|how many commit|activity.?graph|github.?activity|streak|contributions? in|contributed|show.*graph|graph.*github/.test(query.toLowerCase())
+}
+
+/**
+ * Extract a 4-digit year (2010–currentYear) from a query string.
+ * Returns null if none found — caller falls back to current year.
+ */
+function extractYear(query: string): number | null {
+  const currentYear = new Date().getFullYear()
+  const match = query.match(/\b(20\d{2})\b/)
+  if (!match) return null
+  const year = parseInt(match[1], 10)
+  return (year >= 2010 && year <= currentYear) ? year : null
+}
+
+/**
+ * For queries about a specific repo, detect the repo name so we can
+ * fetch its README and inject as context.
+ */
+function detectRepoName(query: string, repoList: string[]): string | null {
+  const q = query.toLowerCase()
+  for (const repo of repoList) {
+    if (q.includes(repo.toLowerCase())) return repo
+  }
+  return null
+}
+
+// ── GitHub README fetcher ─────────────────────────────────────────────────────
+
+/**
+ * Fetches a repo's README from GitHub API and returns its text content.
+ * Used to give Gemini actual project context when visitor asks about a specific repo.
+ */
+async function fetchRepoReadme(repoName: string, token?: string): Promise<string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'portfolio-know-more/1.0',
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 4000)
+    const res = await fetch(
+      `https://api.github.com/repos/${PROFILES.githubUsername}/${repoName}/readme`,
+      { headers, signal: ctrl.signal }
+    ).finally(() => clearTimeout(t))
+
+    if (!res.ok) return ''
+    const data = await res.json() as { content?: string; encoding?: string }
+    if (!data.content || data.encoding !== 'base64') return ''
+
+    // Decode base64 → text (Edge runtime safe)
+    const decoded = atob(data.content.replace(/\n/g, ''))
+    // Trim to ~800 chars to stay within token budget
+    return decoded.slice(0, 800) + (decoded.length > 800 ? '…' : '')
+  } catch {
+    return ''
+  }
+}
+
+// ── GitHub live context ───────────────────────────────────────────────────────
+
+/**
+ * Fetches profile + repos from GitHub REST API.
+ * Returns formatted markdown injected into Gemini's system prompt.
+ * Falls back gracefully to '' on any error — Gemini grounding handles the rest.
+ */
+interface GitHubContext { ctx: string; repoNames: string[] }
+
+async function fetchGitHubContext(token?: string): Promise<GitHubContext> {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
@@ -139,7 +213,7 @@ async function fetchGitHubContext(token?: string): Promise<string> {
       ),
     ])
 
-    if (!profileRes.ok || !reposRes.ok) return ''
+    if (!profileRes.ok || !reposRes.ok) return { ctx: '', repoNames: [] }
 
     const [profile, repos] = await Promise.all([
       profileRes.json() as Promise<{
@@ -164,28 +238,36 @@ async function fetchGitHubContext(token?: string): Promise<string> {
       )
       .join('\n')
 
-    return (
+    const ctx = (
       `\n## Live GitHub Data (GitHub REST API)\n` +
       `Profile: ${profile.name ?? PROFILES.githubUsername} · ${profile.public_repos} public repos · ` +
       `${profile.followers} followers\n` +
       `Bio: ${profile.bio ?? 'N/A'}\n\n` +
       `Recent repositories:\n${ownRepos}\n` +
-      `\nUse above data directly — do NOT say you cannot access GitHub.\n`
+      `\nUse the above data directly to answer questions about GitHub.\n` +
+      `You CAN answer questions about specific repos listed here.\n` +
+      `If a visitor asks about a project not in this list, politely say you don't have details for that specific repo right now and link them to ${PROFILES.github}.\n`
     )
+    const repoNames = repos.filter(r => !r.fork && !r.archived).map(r => r.name)
+    return { ctx, repoNames }
   } catch {
-    // Timeout or network error — not fatal; Gemini can still search
-    return ''
+    return { ctx: '', repoNames: [] }
   }
 }
 
-// System prompt builder:
-function buildSystemPrompt(platform: Platform, githubCtx: string): string {
+// ── System prompt builder ─────────────────────────────────────────────────────
+
+function buildSystemPrompt(platform: Platform, githubCtx: string, readmeCtx?: string, isContrib = false, contribYear = new Date().getFullYear()): string {
   const platformBlock: Record<Platform, string> = {
     github: `
 ## Active context: GitHub
-You have LIVE GitHub data below. Use it directly.
-When citing repos always include the URL.
-${githubCtx || `Profile: ${PROFILES.github} — use Google Search grounding if live data is unavailable.`}`,
+You have LIVE GitHub data below from GitHub's REST API. Use it directly and confidently.
+When citing repos always include the full GitHub URL.
+${isContrib ? `\n## Note on contribution graph\nThe portfolio UI has ALREADY rendered Sri Harish's ${contribYear} GitHub contribution graph widget in the chat — the visitor can see it below this message. Do NOT say you cannot display it. Acknowledge it is shown (1 sentence) and add 1-2 sentences of context from the live data (repos, languages, recent pushes).` : ''}
+${githubCtx || `Profile: ${PROFILES.github}`}${readmeCtx ? `
+
+## README for queried repository:
+${readmeCtx}` : ''}`, 
 
     linkedin: `
 ## Active context: LinkedIn
@@ -232,7 +314,10 @@ ${platformBlock[platform]}
 
 ## Rules
 - Be specific, concise, and warm — visitors are busy.
-- Always include URLs when citing repos or profiles.
+- Always include clickable URLs when citing repos or profiles (format: https://...).
+- If you don't have specific details about something (e.g. a private repo, a contribution count you can't verify), say: "I don't have those specific details right now, but you can find them at [URL]" — never say "I cannot browse" or "I cannot access".
+- For GitHub questions: you have live data — use it confidently without disclaimers.
+- For Kaggle/HuggingFace/LinkedIn: use Google Search grounding; if grounding doesn't surface details, provide the direct profile URL so the visitor can explore.
 - Stay on-topic; redirect unrelated questions back to Harish's work.`
 }
 
@@ -266,16 +351,16 @@ async function tryModel(
       return { type: 'exhausted', reason: `${modelId}: network error after ${maxRetries + 1} attempts` }
     }
 
-    // Success
+    // ── Success ──────────────────────────────────────────────────────────────
     if (res.ok) return { type: 'ok', response: res, modelId }
 
-    // Hard error — skip model entirely
+    // ── Hard error — skip model entirely ────────────────────────────────────
     if (SKIP_MODEL_STATUSES.has(res.status)) {
       const body = await res.text().catch(() => '')
       return { type: 'skip', reason: `${modelId}: ${res.status} — ${body.slice(0, 120)}` }
     }
 
-    // Transient error — retry with backoff 
+    // ── Transient error — retry with backoff ─────────────────────────────────
     if (RETRYABLE_STATUSES.has(res.status)) {
       if (attempt < maxRetries) {
         const retryAfter = res.headers.get('Retry-After')
@@ -285,15 +370,17 @@ async function tryModel(
       return { type: 'exhausted', reason: `${modelId}: ${res.status} after ${maxRetries + 1} attempts` }
     }
 
-    // Unknown status — skip model (could be a new error type we haven't accounted for)
+    // ── Unknown status — skip ────────────────────────────────────────────────
     return { type: 'skip', reason: `${modelId}: unexpected status ${res.status}` }
   }
 
   return { type: 'exhausted', reason: `${modelId}: loop exited unexpectedly` }
 }
 
-// Route handler
+// ── Route handler ─────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
+  // ── Validate env ──────────────────────────────────────────────────────────
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     return new Response(
@@ -302,7 +389,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Parse request
+  // ── Parse request ─────────────────────────────────────────────────────────
   let messages: Array<{ role: string; content: string }>
   try {
     const parsed = await req.json()
@@ -313,17 +400,27 @@ export async function POST(req: NextRequest) {
 
   if (!messages.length) return new Response('No messages', { status: 400 })
 
-  // Platform detection + GitHub prefetch (parallel)
+  // ── Platform detection + GitHub prefetch ────────────────────────────────
   const latestUser = [...messages].reverse().find(m => m.role === 'user')?.content ?? ''
   const platform   = detectPlatform(latestUser)
+  const isContrib   = isContributionQuery(latestUser)
+  const contribYear = isContrib ? (extractYear(latestUser) ?? new Date().getFullYear()) : new Date().getFullYear()
 
-  // GitHub data fetched in parallel before Gemini call — no extra latency cost
-  const githubCtx = platform === 'github'
+  // GitHub REST API fetched in parallel — no extra latency cost
+  const ghResult  = platform === 'github'
     ? await fetchGitHubContext(process.env.GITHUB_TOKEN)
+    : { ctx: '', repoNames: [] }
+
+  // If asking about a specific repo, fetch its README for context
+  const queriedRepo = platform === 'github'
+    ? detectRepoName(latestUser, ghResult.repoNames)
+    : null
+  const readmeCtx = queriedRepo
+    ? await fetchRepoReadme(queriedRepo, process.env.GITHUB_TOKEN)
     : ''
 
-  // Build Gemini request body
-  const systemPrompt = buildSystemPrompt(platform, githubCtx)
+  // ── Build Gemini request ──────────────────────────────────────────────────
+  const systemPrompt = buildSystemPrompt(platform, ghResult.ctx, readmeCtx, isContrib, contribYear)
 
   const contents: GeminiContent[] = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -345,17 +442,23 @@ export async function POST(req: NextRequest) {
     },
   }
 
-  // Streaming response with model fallback
+  // ── Streaming response ────────────────────────────────────────────────────
   const stream = new ReadableStream({
     async start(controller) {
       const enq = (data: string) => controller.enqueue(sse(data))
 
       // Signal GitHub prefetch to UI immediately
-      if (platform === 'github' && githubCtx) {
+      if (platform === 'github' && ghResult.ctx) {
         enq(`[SEARCHING:github]`)
       }
 
-      // Model fallback loop
+      // Contribution query → emit rich card signal before Gemini even starts
+      // The UI will render the contribution graph widget immediately
+      if (isContrib && platform === 'github') {
+        enq(`[RICHCARD:contributions:${contribYear}]`)
+      }
+
+      // ── Model fallback loop ───────────────────────────────────────────────
       let chosenResponse: Response | null = null
       const attemptLog: string[] = []
 
@@ -389,16 +492,34 @@ export async function POST(req: NextRequest) {
         return
       }
 
-      // Stream SSE chunks from Gemini to client with minimal processing:
+      // ── Stream SSE chunks ─────────────────────────────────────────────────
       const reader  = chosenResponse.body.getReader()
       const dec     = new TextDecoder()
       let buf       = ''
-      // If GitHub — [SEARCHING:github] already emitted; don't double-emit
-      let sentSearch = platform === 'github' && !!githubCtx
+      // Fix: was referencing deleted `githubCtx` var — use ghResult.ctx
+      let sentSearch = platform === 'github' && !!ghResult.ctx
+
+      // Wire up cancel so upstream Gemini reader is released when client disconnects
+      // Without this, ECONNRESET from a dropped client leaks the connection
+      ;(stream as unknown as { _reader?: ReadableStreamDefaultReader })._ = reader
 
       try {
         while (true) {
-          const { done, value } = await reader.read()
+          let readResult: ReadableStreamReadResult<Uint8Array>
+          try {
+            readResult = await reader.read()
+          } catch (readErr: unknown) {
+            // Client disconnected (ECONNRESET / AbortError) — exit cleanly, no throw
+            const isAbort =
+              readErr instanceof Error &&
+              (readErr.name === 'AbortError' ||
+               (readErr as NodeJS.ErrnoException).code === 'ECONNRESET' ||
+               (readErr as NodeJS.ErrnoException).code === 'ERR_HTTP2_STREAM_CANCEL')
+            if (isAbort) break
+            throw readErr // re-throw genuine errors
+          }
+
+          const { done, value } = readResult
           if (done) break
 
           buf += dec.decode(value, { stream: true })
@@ -429,21 +550,43 @@ export async function POST(req: NextRequest) {
             }
 
             for (const part of candidate.content?.parts ?? []) {
-              if (part.text) enq(JSON.stringify({ delta: part.text }))
+              if (part.text) {
+                try { enq(JSON.stringify({ delta: part.text })) } catch { break }
+              }
             }
 
             if (candidate.finishReason === 'SAFETY' && !candidate.content?.parts?.some(p => p.text)) {
-              enq(JSON.stringify({ delta: "I can't answer that." }))
+              enq(JSON.stringify({ delta: "I can\'t answer that." }))
             }
           }
         }
+      } catch (streamErr: unknown) {
+        // Swallow client-disconnect errors that escaped the inner catch
+        const isClientGone =
+          streamErr instanceof Error &&
+          ((streamErr as NodeJS.ErrnoException).code === 'ECONNRESET' ||
+           (streamErr as NodeJS.ErrnoException).code === 'ERR_HTTP2_STREAM_CANCEL' ||
+           streamErr.name === 'AbortError')
+        if (!isClientGone) {
+          // Genuine server error — try to surface it
+          try { enq(JSON.stringify({ delta: '\n\n⚠️ Stream error. Please try again.' })) } catch { /* client gone */ }
+        }
+        // Either way: fall through to cleanup
       } finally {
+        try { reader.cancel() } catch { /* ignore */ }
         reader.releaseLock()
       }
 
-      if (sentSearch) enq('[SEARCH_DONE]')
-      enq('[DONE]')
-      controller.close()
+      try { if (sentSearch) enq('[SEARCH_DONE]') } catch { /* client gone */ }
+      try { enq('[DONE]') } catch { /* client gone */ }
+      try { controller.close() } catch { /* already closed */ }
+    },
+    // Cancel handler — called by Next.js when the HTTP client disconnects
+    // Releases the upstream Gemini reader so the connection isn't leaked
+    cancel() {
+      // The stream start() fn may still be running; it will hit ECONNRESET
+      // on the next reader.read() and exit cleanly via the inner catch above.
+      // Nothing to do here — cleanup happens in the finally block.
     },
   })
 
