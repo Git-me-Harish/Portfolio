@@ -1,8 +1,21 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { GridBottomSheet } from '../grid-bottom-sheet'
+import emailjs from '@emailjs/browser'
+
+// ─── EmailJS config ───────────────────────────────────────────────────────────
+// 1. Create a free account at https://www.emailjs.com
+// 2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
+// 3. Create an Email Template → copy the Template ID
+//    Template variables used: {{from_name}}, {{from_email}}, {{idea_title}},
+//    {{message}}, {{attachment_name}}  (attach file via template if needed)
+// 4. Copy your Public Key from Account → API Keys
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID'   // ← replace
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID'  // ← replace
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY'   // ← replace
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface Idea {
   id: string
@@ -99,6 +112,378 @@ const stageConfig = {
   building: { label: 'Building', color: '#00cc88', bg: '#00cc8820' },
 }
 
+// ─── Collaborate Form ─────────────────────────────────────────────────────────
+
+type FormState = 'idle' | 'sending' | 'success' | 'error'
+
+interface AttachedFile {
+  name: string
+  size: number
+  base64: string
+  type: string
+}
+
+function CollaborateForm() {
+  const [name,    setName]    = useState('')
+  const [email,   setEmail]   = useState('')
+  const [ideaRef, setIdeaRef] = useState('')
+  const [message, setMessage] = useState('')
+  const [files,   setFiles]   = useState<AttachedFile[]>([])
+  const [status,  setStatus]  = useState<FormState>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const MAX_FILES = 3
+  const MAX_MB    = 5
+
+  const handleFiles = (picked: FileList | null) => {
+    if (!picked) return
+    const remaining = MAX_FILES - files.length
+    const toAdd = Array.from(picked).slice(0, remaining)
+
+    toAdd.forEach(file => {
+      if (file.size > MAX_MB * 1024 * 1024) {
+        setErrorMsg(`"${file.name}" exceeds ${MAX_MB}MB limit.`)
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = e => {
+        const base64 = (e.target?.result as string).split(',')[1]
+        setFiles(prev => [...prev, { name: file.name, size: file.size, base64, type: file.type }])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removeFile = (idx: number) => setFiles(prev => prev.filter((_, i) => i !== idx))
+
+  const fmtSize = (bytes: number) =>
+    bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)}KB` : `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || !email.trim() || !message.trim()) return
+    setStatus('sending')
+    setErrorMsg('')
+
+    try {
+      const attachmentNames = files.map(f => f.name).join(', ') || 'None'
+
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_name:       name.trim(),
+          from_email:      email.trim(),
+          idea_title:      ideaRef.trim() || 'General inquiry',
+          message:         message.trim(),
+          attachment_name: attachmentNames,
+        },
+        EMAILJS_PUBLIC_KEY,
+      )
+
+      setStatus('success')
+      setName(''); setEmail(''); setIdeaRef(''); setMessage(''); setFiles([])
+    } catch {
+      setStatus('error')
+      setErrorMsg('Something went wrong. Please try emailing directly.')
+    }
+  }
+
+  // ── Shared input style (CSS-var-aware for dark/light) ──
+  const inputCls = [
+    'w-full px-3 py-2 rounded-lg text-[12px] outline-none transition-all',
+    'border focus:border-[#00cc88]',
+    'bg-[var(--collab-input-bg)] border-[var(--collab-input-border)]',
+    'text-[var(--collab-input-text)] placeholder:text-[var(--collab-placeholder)]',
+  ].join(' ')
+
+  if (status === 'success') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="mt-2 p-5 rounded-xl border text-center"
+        style={{ background: '#0d1f18', borderColor: '#00cc8840' }}
+      >
+        <div className="w-9 h-9 rounded-full flex items-center justify-center mx-auto mb-3"
+          style={{ background: '#00cc8820' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00cc88" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Message sent!</p>
+        <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+          I&apos;ll get back to you soon.
+        </p>
+        <button
+          onClick={() => setStatus('idle')}
+          className="mt-4 text-[11px] underline underline-offset-2"
+          style={{ color: '#00cc88' }}
+        >
+          Send another
+        </button>
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.4 }}
+      className="mt-2 rounded-xl overflow-hidden relative"
+      style={{ border: '1px solid #00cc8818' }}
+    >
+      {/* Animated grid background */}
+      <div className="absolute inset-0" style={{ zIndex: 0 }} aria-hidden="true">
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg"
+          style={{ opacity: 0.35 }}>
+          <defs>
+            <pattern id="collab-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#00cc88" strokeWidth="0.4" />
+            </pattern>
+            <radialGradient id="collab-fade" cx="50%" cy="50%" r="55%">
+              <stop offset="0%" stopColor="white" stopOpacity="1" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
+            <mask id="collab-mask">
+              <rect width="100%" height="100%" fill="url(#collab-fade)" />
+            </mask>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#collab-grid)" mask="url(#collab-mask)" />
+        </svg>
+        <motion.div
+          animate={{ x: [0, 70, 0, -70, 0], y: [0, 30, 60, 30, 0] }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute', top: '10%', left: '10%',
+            width: 120, height: 120, borderRadius: '50%',
+            background: 'radial-gradient(circle, #00cc8825 0%, transparent 70%)',
+            filter: 'blur(14px)',
+          }}
+        />
+        <motion.div
+          animate={{ x: [0, -50, 0, 50, 0], y: [0, -40, 0, 40, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute', bottom: '10%', right: '10%',
+            width: 90, height: 90, borderRadius: '50%',
+            background: 'radial-gradient(circle, #00cc8818 0%, transparent 70%)',
+            filter: 'blur(10px)',
+          }}
+        />
+        {/* Readability overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--collab-bg)', opacity: 0.85 }} />
+      </div>
+
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--collab-border)', position: 'relative', zIndex: 1 }}>
+        <h4 className="text-[13px] font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>
+          Want to collaborate?
+        </h4>
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          Always open to discussing ideas and building interesting things together.
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="p-4 space-y-3" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Name + Email row */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide"
+              style={{ color: 'var(--text-secondary)' }}>Name *</label>
+            <input
+              className={inputCls}
+              placeholder="Your name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide"
+              style={{ color: 'var(--text-secondary)' }}>Email *</label>
+            <input
+              type="email"
+              className={inputCls}
+              placeholder="you@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Idea reference */}
+        <div>
+          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide"
+            style={{ color: 'var(--text-secondary)' }}>Idea / Project</label>
+          <input
+            className={inputCls}
+            placeholder="Which idea caught your eye? (optional)"
+            value={ideaRef}
+            onChange={e => setIdeaRef(e.target.value)}
+          />
+        </div>
+
+        {/* Message */}
+        <div>
+          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide"
+            style={{ color: 'var(--text-secondary)' }}>Message *</label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={3}
+            placeholder="Tell me what you have in mind..."
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* File attachment */}
+        <div>
+          <label className="block text-[10px] font-medium mb-1.5 uppercase tracking-wide"
+            style={{ color: 'var(--text-secondary)' }}>
+            Attachments <span style={{ color: 'var(--collab-placeholder)' }}>— up to {MAX_FILES} files, {MAX_MB}MB each</span>
+          </label>
+
+          {/* Attached file pills */}
+          <AnimatePresence>
+            {files.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex flex-wrap gap-1.5 mb-2"
+              >
+                {files.map((f, i) => (
+                  <motion.div
+                    key={f.name + i}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px]"
+                    style={{ background: '#00cc8815', border: '1px solid #00cc8830' }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00cc88" strokeWidth="2">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                    <span style={{ color: '#00cc88' }}>{f.name}</span>
+                    <span style={{ color: '#00cc8880' }}>({fmtSize(f.size)})</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="ml-0.5 hover:opacity-70 transition-opacity"
+                      style={{ color: '#00cc88' }}
+                    >
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Drop zone */}
+          {files.length < MAX_FILES && (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full py-2.5 rounded-lg border border-dashed text-[11px] transition-all hover:border-[#00cc88] hover:text-[#00cc88]"
+              style={{
+                borderColor: 'var(--collab-input-border)',
+                color: 'var(--collab-placeholder)',
+                background: 'var(--collab-dropzone-bg)',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" className="inline mr-1.5 -mt-0.5">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+              Click to attach files
+            </button>
+          )}
+
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.doc,.docx,.txt,.zip,.mp4,.mov"
+            className="hidden"
+            onChange={e => { handleFiles(e.target.files); e.target.value = '' }}
+          />
+        </div>
+
+        {/* Error */}
+        <AnimatePresence>
+          {(status === 'error' || errorMsg) && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-[11px] px-2 py-1.5 rounded-lg"
+              style={{ background: '#ff444415', color: '#ff4444', border: '1px solid #ff444430' }}
+            >
+              {errorMsg || 'Something went wrong. Please try again.'}
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={status === 'sending' || !name || !email || !message}
+          className="w-full py-2.5 rounded-lg text-[12px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: '#00cc88', color: '#000' }}
+        >
+          {status === 'sending' ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              Sending…
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-1.5">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+              Say Hello
+            </span>
+          )}
+        </button>
+      </form>
+    </motion.div>
+  )
+}
+
+// ─── CSS variables to add to your global stylesheet ──────────────────────────
+// (Add these inside your existing :root / [data-theme="dark"] / [data-theme="light"] blocks)
+//
+// Dark mode (already your default):
+//   --collab-bg:             #0d1f18;
+//   --collab-border:         #00cc8828;
+//   --collab-input-bg:       #0a1810;
+//   --collab-input-border:   #00cc8830;
+//   --collab-input-text:     #e8f5f0;
+//   --collab-placeholder:    #4a6b5c;
+//   --collab-dropzone-bg:    #0a180f;
+//
+// Light mode ([data-theme="light"] or .light):
+//   --collab-bg:             #f0faf5;
+//   --collab-border:         #00cc8840;
+//   --collab-input-bg:       #ffffff;
+//   --collab-input-border:   #d0e8dc;
+//   --collab-input-text:     #0d1f18;
+//   --collab-placeholder:    #8aada0;
+//   --collab-dropzone-bg:    #f8fdfb;
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface IdeasGridProps { isMobile?: boolean }
 
 export function IdeasGrid({ isMobile }: IdeasGridProps) {
@@ -189,32 +574,8 @@ export function IdeasGrid({ isMobile }: IdeasGridProps) {
               </motion.button>
             ))}
 
-            {/* Collaborate CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.4 }}
-              className="mt-2 p-4 rounded-xl border"
-              style={{ background: '#0d1f18', borderColor: '#00cc8828' }}
-            >
-              <h4 className="text-[13px] font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-                Want to collaborate?
-              </h4>
-              <p className="text-[12px] leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
-                Always open to discussing ideas and building interesting things together.
-              </p>
-              <a
-                href="mailto:your.email@example.com"
-                className="btn-capsule inline-flex gap-1.5"
-                style={{ background: '#00cc88', borderColor: '#00cc88', color: '#000', fontWeight: 700 }}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-                Say Hello
-              </a>
-            </motion.div>
+            {/* Collaborate Form */}
+            <CollaborateForm />
           </div>
         </div>
 

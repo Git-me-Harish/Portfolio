@@ -271,6 +271,9 @@ function ChatBackground() {
 
 type SearchPlatform = 'github' | 'linkedin' | 'kaggle' | 'huggingface' | 'web' | null
 
+type RichCardType = 'contributions' | null
+type RichCardPayload = { type: 'contributions'; year: number } | null
+
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -278,6 +281,7 @@ interface Message {
   streaming?: boolean
   searched?: boolean
   searchPlatform?: SearchPlatform
+  richCard?: RichCardPayload
 }
 
 interface KnowMoreGridProps {
@@ -286,13 +290,13 @@ interface KnowMoreGridProps {
 
 const SUGGESTED_PROMPTS = [
   "What repos are on Harish's GitHub?",
+  "Show his GitHub contribution graph",
   "What models has he published on HuggingFace?",
   "What's his ML/AI stack?",
   "Any Kaggle competitions or medals?",
   "Any published research or papers?",
   "What certifications does he hold?",
   "What kind of roles is he open to?",
-  "Tell me about his experience with LLMs",
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -334,19 +338,47 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
 function parseInline(text: string): React.ReactNode[] {
   const parts: React.ReactNode[] = []
-  const regex = /(\*\*(.+?)\*\*|`([^`]+)`)/g
+  // Order matters: bold → code → markdown link [text](url) → bare https://...
+  const regex = /(\*\*(.+?)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s,)>\]"]+))/g
   let lastIndex = 0
   let match: RegExpExecArray | null
+  let key = 0
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     if (match[2]) {
-      parts.push(<strong key={match.index} style={{ color: 'var(--text-primary)' }}>{match[2]}</strong>)
+      parts.push(<strong key={key++} style={{ color: 'var(--text-primary)' }}>{match[2]}</strong>)
     } else if (match[3]) {
       parts.push(
-        <code key={match.index} className="px-1.5 py-0.5 rounded text-[11px]"
+        <code key={key++} className="px-1.5 py-0.5 rounded text-[11px]"
           style={{ background: 'var(--bg-elevated)', color: 'var(--accent)', fontFamily: 'var(--font-mono)', border: '1px solid var(--border)' }}>
           {match[3]}
         </code>
+      )
+    } else if (match[4] && match[5]) {
+      // [label](url) markdown link
+      parts.push(
+        <a key={key++} href={match[5]} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 underline underline-offset-2 transition-opacity hover:opacity-70"
+          style={{ color: 'var(--accent)' }}>
+          {match[4]}
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0 opacity-70">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+          </svg>
+        </a>
+      )
+    } else if (match[6]) {
+      // bare https://... URL
+      const url = match[6]
+      const display = url.replace(/^https?:\/\//, '')
+      parts.push(
+        <a key={key++} href={url} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 underline underline-offset-2 transition-opacity hover:opacity-70 break-all"
+          style={{ color: 'var(--accent)' }}>
+          {display}
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0 opacity-70">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+          </svg>
+        </a>
       )
     }
     lastIndex = match.index + match[0].length
@@ -506,6 +538,349 @@ function SearchIndicator({ platform }: { platform?: SearchPlatform }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ContributionGraph — native React renderer, consumes /api/github-contrib JSON
+// No external SVG — full control over colors, sizing, responsiveness
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GITHUB_USERNAME = 'Git-me-Harish'
+
+// Level → accent-green opacity, matching GitHub's 4-level scale
+const LEVEL_COLORS: Record<number, string> = {
+  // Level 0 handled separately — uses rgba for SVG compatibility
+  1: 'rgba(0,204,136,0.20)',
+  2: 'rgba(0,204,136,0.45)',
+  3: 'rgba(0,204,136,0.72)',
+  4: 'rgba(0,204,136,1.00)',
+}
+const LEVEL_0_COLOR = 'rgba(128,128,128,0.13)'  // empty cell, SVG-safe
+
+interface ContribDay  { date: string; count: number; level: 0|1|2|3|4 }
+interface ContribWeek { days: ContribDay[] }
+interface ContribData { weeks: ContribWeek[]; totalContributions: number }
+
+// Short month label shown above the first week of each month
+function getMonthLabels(weeks: ContribWeek[]): { idx: number; label: string }[] {
+  const labels: { idx: number; label: string }[] = []
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  let lastMonth = -1
+  weeks.forEach((week, wi) => {
+    const firstDay = week.days.find(d => d.date)
+    if (!firstDay) return
+    const m = new Date(firstDay.date).getMonth()
+    if (m !== lastMonth) { labels.push({ idx: wi, label: MONTHS[m] }); lastMonth = m }
+  })
+  return labels
+}
+
+// Tooltip state
+type TooltipState = { date: string; count: number; x: number; y: number } | null
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ContributionSVG — auto-fits the heatmap grid to the container width.
+// Renders as a native <svg> so month labels and cells scroll together
+// and cell size scales to always fill available space perfectly.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ContribSVGProps {
+  weeks:        ContribWeek[]
+  monthLabels:  { idx: number; label: string }[]
+  containerRef: React.RefObject<HTMLDivElement>
+  tooltip:      TooltipState
+  setTooltip:   (t: TooltipState) => void
+}
+
+function ContributionSVG({ weeks, monthLabels, containerRef, tooltip, setTooltip }: ContribSVGProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [cellSize, setCellSize] = useState(10)
+  const GAP = 2
+
+  // Compute cell size to exactly fill wrapper width
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    const compute = () => {
+      const available = el.clientWidth
+      if (available < 1) return
+      // total columns = number of weeks
+      const cols = weeks.length || 53
+      // cellSize = (available - gaps) / cols
+      const size = Math.floor((available - GAP * (cols - 1)) / cols)
+      setCellSize(Math.max(6, Math.min(size, 13))) // clamp 6–13px
+    }
+    compute()
+    const ro = new ResizeObserver(compute)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [weeks.length])
+
+  const MONTH_ROW_H = 14
+  const ROWS        = 7
+  const gridH       = ROWS * cellSize + (ROWS - 1) * GAP
+  const svgH        = MONTH_ROW_H + gridH + 2
+  const svgW        = weeks.length * (cellSize + GAP) - GAP
+
+  return (
+    <div ref={wrapperRef} className="w-full relative" style={{ userSelect: 'none' }}>
+      <svg
+        width="100%"
+        height={svgH}
+        viewBox={`0 0 ${svgW} ${svgH}`}
+        preserveAspectRatio="xMidYMid meet"
+        style={{ display: 'block', overflow: 'visible' }}
+      >
+        {/* Month labels */}
+        {monthLabels.map(({ idx, label }) => (
+          <text
+            key={label + idx}
+            x={idx * (cellSize + GAP)}
+            y={MONTH_ROW_H - 3}
+            fontSize={9}
+            fill="var(--text-muted)"
+            fontFamily="var(--font-mono)"
+          >
+            {label}
+          </text>
+        ))}
+
+        {/* Cells */}
+        {weeks.map((week, wi) =>
+          week.days.map((day, di) => {
+            const x = wi * (cellSize + GAP)
+            const y = MONTH_ROW_H + di * (cellSize + GAP)
+            const bg = day.level === 0 ? LEVEL_0_COLOR : LEVEL_COLORS[day.level]
+            return (
+              <g key={`${wi}-${di}`}>
+                <rect
+                  x={x} y={y}
+                  width={cellSize} height={cellSize}
+                  rx={Math.max(1, cellSize * 0.18)}
+                  fill={bg}
+                  style={{ cursor: day.count > 0 ? 'pointer' : 'default', transition: 'opacity 0.1s' }}
+                  onMouseEnter={(e) => {
+                    if (day.count === 0) return
+                    const container = containerRef.current?.getBoundingClientRect()
+                    const rect      = e.currentTarget.getBoundingClientRect()
+                    if (!container) return
+                    setTooltip({
+                      date:  day.date,
+                      count: day.count,
+                      x:     rect.left - container.left + cellSize / 2,
+                      y:     rect.top  - container.top  - 30,
+                    })
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+                {/* Glow for level 3-4 */}
+                {day.level >= 3 && (
+                  <rect
+                    x={x} y={y}
+                    width={cellSize} height={cellSize}
+                    rx={Math.max(1, cellSize * 0.18)}
+                    fill="none"
+                    stroke={LEVEL_COLORS[day.level]}
+                    strokeWidth={0.8}
+                    opacity={0.5}
+                  />
+                )}
+              </g>
+            )
+          })
+        )}
+      </svg>
+
+
+    </div>
+  )
+}
+
+function ContributionGraph({ year: propYear }: { year?: number }) {
+  const currentYear                     = new Date().getFullYear()
+  const [selectedYear, setSelectedYear] = useState(propYear ?? currentYear)
+  const [data, setData]                 = useState<ContribData | null>(null)
+  const [error, setError]               = useState(false)
+  const [tooltip, setTooltip]           = useState<TooltipState>(null)
+  const containerRef                    = useRef<HTMLDivElement>(null)
+
+  // Re-fetch whenever selectedYear changes (e.g. user clicks a year pill)
+  useEffect(() => {
+    setData(null)
+    setError(false)
+    fetch(`/api/github-contrib?user=${GITHUB_USERNAME}&year=${selectedYear}`)
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json() })
+      .then((d: ContribData) => setData(d))
+      .catch(() => setError(true))
+  }, [selectedYear])
+
+  // Year pills: 2022 → current year, descending
+  const years = Array.from({ length: currentYear - 2021 }, (_, i) => currentYear - i)
+
+  const profileUrl = `https://github.com/${GITHUB_USERNAME}`
+
+  // ── Error state ─────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="rounded-xl border p-3 flex items-center justify-between gap-3"
+        style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
+        <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+          Contribution graph unavailable right now
+        </span>
+        <a href={profileUrl} target="_blank" rel="noopener noreferrer"
+          className="text-[10px] flex items-center gap-0.5 flex-shrink-0 hover:opacity-70 transition-opacity underline underline-offset-2"
+          style={{ color: 'var(--accent)' }}>
+          View on GitHub
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+          </svg>
+        </a>
+      </div>
+    )
+  }
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────
+  if (!data) {
+    return (
+      <div className="rounded-xl border p-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <motion.div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ background: 'var(--accent)' }}
+            animate={{ scale: [1,1.5,1], opacity: [0.4,1,0.4] }}
+            transition={{ duration: 1, repeat: Infinity }} />
+          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Loading contribution graph…</span>
+        </div>
+        {/* Skeleton grid — 7 rows × 53 cols */}
+        <div className="flex gap-[3px]">
+          {[...Array(53)].map((_,wi) => (
+            <div key={wi} className="flex flex-col gap-[3px]">
+              {[...Array(7)].map((_,di) => (
+                <motion.div key={di}
+                  className="rounded-[2px]"
+                  style={{ width: 10, height: 10, background: 'var(--border)' }}
+                  animate={{ opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ duration: 1.8, repeat: Infinity, delay: (wi * 0.015 + di * 0.04) }} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const monthLabels = getMonthLabels(data.weeks)
+
+  // ── Rendered graph ───────────────────────────────────────────────────────
+  return (
+    <div className="rounded-xl border p-3 relative"
+      style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}
+      ref={containerRef}>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--text-muted)' }}>
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            Activity
+          </span>
+          {/* Year switcher pills */}
+          <div className="flex items-center gap-1 ml-1">
+            {years.map(y => (
+              <button key={y} onClick={() => setSelectedYear(y)}
+                className="text-[9px] px-1.5 py-0.5 rounded-full transition-all duration-150"
+                style={{
+                  background: y === selectedYear ? 'rgba(0,204,136,0.18)' : 'transparent',
+                  color: y === selectedYear ? 'var(--accent)' : 'var(--text-muted)',
+                  fontFamily: 'var(--font-mono)',
+                  border: `1px solid ${y === selectedYear ? 'rgba(0,204,136,0.35)' : 'var(--border)'}`,
+                }}>
+                {y}
+              </button>
+            ))}
+          </div>
+          {data && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+              style={{ background: 'rgba(0,204,136,0.12)', color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
+              {data.totalContributions} contributions
+            </span>
+          )}
+        </div>
+        <a href={profileUrl} target="_blank" rel="noopener noreferrer"
+          className="text-[10px] flex items-center gap-0.5 hover:opacity-70 transition-opacity"
+          style={{ color: 'var(--accent)' }}>
+          github.com/{GITHUB_USERNAME}
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+          </svg>
+        </a>
+      </div>
+
+      {/*
+        ── Responsive grid ───────────────────────────────────────────────
+        Rendered as a single SVG so month labels + cells scroll together.
+        Cell size is computed to fill the card width exactly — no overflow,
+        no horizontal scroll needed. On very narrow screens (<260px) we
+        fall back to a horizontal scroll with a fixed 10px cell size.
+        ─────────────────────────────────────────────────────────────────
+      */}
+      <ContributionSVG
+        weeks={data.weeks}
+        monthLabels={monthLabels}
+        containerRef={containerRef}
+        tooltip={tooltip}
+        setTooltip={setTooltip}
+      />
+
+      {/* Legend */}
+      <div className="flex items-center gap-1.5 mt-2 justify-end">
+        <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Less</span>
+        {[0,1,2,3,4].map(l => (
+          <div key={l} className="rounded-[2px]"
+            style={{
+              width: 8, height: 8,
+              background: l === 0 ? LEVEL_0_COLOR : LEVEL_COLORS[l],
+            }} />
+        ))}
+        <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>More</span>
+      </div>
+
+      {/* Hover tooltip */}
+      <AnimatePresence>
+        {tooltip && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute z-50 pointer-events-none px-2 py-1 rounded-md text-[10px] whitespace-nowrap"
+            style={{
+              left: tooltip.x,
+              top: tooltip.y,
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-mono)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            }}>
+            <span style={{ color: 'var(--accent)' }}>{tooltip.count}</span>
+            {` event${tooltip.count > 1 ? 's' : ''} · ${tooltip.date}`}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RichCard — dispatches to the right card type based on richCard field
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RichCard({ payload }: { payload: RichCardPayload }) {
+  if (payload?.type === 'contributions') return <ContributionGraph year={payload.year} />
+  return null
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MessageBubble — now with avatars on each side
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -579,6 +954,14 @@ function MessageBubble({ message }: { message: Message }) {
               )
           }
         </div>
+
+        {/* Rich card — rendered after text when streaming is done */}
+        {!isUser && message.richCard && !message.streaming && (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}
+            className="w-full mt-1">
+            <RichCard payload={message.richCard} />
+          </motion.div>
+        )}
       </div>
     </motion.div>
   )
@@ -831,6 +1214,7 @@ export function KnowMoreGrid({ isMobile }: KnowMoreGridProps) {
         let accumulated = ''
         let didSearch = false
         let searchPlatform: SearchPlatform = null
+        let richCard: RichCardType = null
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
@@ -869,20 +1253,33 @@ export function KnowMoreGrid({ isMobile }: KnowMoreGridProps) {
               continue
             }
             if (data === '[SEARCH_DONE]') { setIsSearching(false); continue }
+            // Rich card injection — [RICHCARD:type:year] or [RICHCARD:type]
+            const richCardMatch = data.match(/^\[RICHCARD:(\w+)(?::(\d+))?\]$/)
+            if (richCardMatch) {
+              const cardType = richCardMatch[1]
+              const cardYear = richCardMatch[2] ? parseInt(richCardMatch[2], 10) : new Date().getFullYear()
+              if (cardType === 'contributions') {
+                richCard = { type: 'contributions', year: cardYear }
+              }
+              setMessages(prev => prev.map(m =>
+                m.id === assistantMsgId ? { ...m, richCard } : m
+              ))
+              continue
+            }
             try {
               const parsed = JSON.parse(data)
               if (parsed.delta) {
                 accumulated += parsed.delta
                 setMessages(prev => prev.map(m =>
                   m.id === assistantMsgId
-                    ? { ...m, content: accumulated, streaming: true, searched: didSearch, searchPlatform }
+                    ? { ...m, content: accumulated, streaming: true, searched: didSearch, searchPlatform, richCard }
                     : m
                 ))
               }
             } catch { /* ignore */ }
           }
         }
-        setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, streaming: false } : m))
+        setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, streaming: false, richCard: richCard ?? m.richCard } : m))
       } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return
         setMessages(prev => prev.map(m =>
