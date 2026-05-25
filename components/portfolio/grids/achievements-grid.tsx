@@ -31,6 +31,8 @@ interface Achievement {
   impact: string
   tags: string[]
   credentialUrl?: string
+  /** Place image at public/achievements/achieve-{id}.png (or .jpg) */
+  imagePath?: string
 }
 
 // ── SVG Icons — bare, no box wrapper ─────────────────────────────────────────
@@ -107,6 +109,7 @@ const achievements: Achievement[] = [
     impact: 'System serving 3M+ daily predictions with zero-downtime retraining cycles.',
     tags: ['MLOps', 'AutoML', 'Airflow', 'Python'],
     credentialUrl: '#',
+    imagePath: '/achievements/achieve-1.png',
   },
   {
     id: '2',
@@ -120,6 +123,7 @@ const achievements: Achievement[] = [
     impact: 'Architected SageMaker pipeline cutting model iteration time from 3 days to 4 hours.',
     tags: ['SageMaker', 'AWS', 'MLOps'],
     credentialUrl: '#',
+    imagePath: '/achievements/achieve-2.png',
   },
   {
     id: '3',
@@ -133,6 +137,7 @@ const achievements: Achievement[] = [
     impact: '3.2x inference speedup on A100. <0.8% accuracy drop on GLUE. 47+ citations in 6 months.',
     tags: ['NLP', 'Quantization', 'PyTorch', 'Transformers'],
     credentialUrl: '#',
+    imagePath: '/achievements/achieve-3.png',
   },
   {
     id: '4',
@@ -145,6 +150,7 @@ const achievements: Achievement[] = [
       'Built an offline-capable crop disease detection app with MobileNetV3 + ONNX Runtime. Federated learning pipeline for continuous improvement without data centralisation.',
     impact: 'Pilot in 2 states. 10K+ scans/day. Model <8MB, sub-100ms inference on mid-range phones.',
     tags: ['Edge AI', 'MobileNet', 'ONNX', 'Federated Learning'],
+    imagePath: '/achievements/achieve-4.png',
   },
   {
     id: '5',
@@ -158,6 +164,7 @@ const achievements: Achievement[] = [
     impact: 'Migrated legacy Hadoop ETL to Dataproc + Airflow on GCP, reducing infra cost by 60%.',
     tags: ['BigQuery', 'Dataflow', 'GCP', 'Airflow'],
     credentialUrl: '#',
+    imagePath: '/achievements/achieve-5.png',
   },
   {
     id: '6',
@@ -170,6 +177,7 @@ const achievements: Achievement[] = [
       'Led a 3-person team to build a gradient-boosted fraud detection model with graph embedding features using XGBoost + Node2Vec.',
     impact: 'Ranked #1 of 400+ teams. Precision@0.01 recall: 0.91 vs baseline of 0.73.',
     tags: ['XGBoost', 'Graph ML', 'Node2Vec'],
+    imagePath: '/achievements/achieve-6.png',
   },
 ]
 
@@ -587,15 +595,40 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                 </div>
               </div>
 
-              {/* Credential link */}
-              {selected.credentialUrl && (
+              {/* Memories — achievement photo */}
+              {selected.imagePath && (
                 <div className="border-t pt-5 mt-6" style={{ borderColor: 'var(--border)' }}>
+                  <span className="grid-label block mb-3">Memories</span>
+                  <div
+                    className="relative w-full rounded-2xl overflow-hidden"
+                    style={{
+                      height: 200,
+                      background: `${selected.accentColor}0a`,
+                      border: `1px solid ${selected.accentColor}22`,
+                    }}
+                  >
+                    <Image
+                      src={selected.imagePath}
+                      alt={`${selected.title} memory`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 440px"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Credential link — hover-reveal underline, bottom-center */}
+              {selected.credentialUrl && (
+                <div className="pt-6 mt-2 flex justify-center">
                   <a
                     href={selected.credentialUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-capsule inline-flex gap-1.5"
-                    style={{ background: selected.accentColor, borderColor: selected.accentColor, color: '#000', fontWeight: 700 }}
+                    className="group inline-flex items-center gap-1.5 text-[11.5px] font-medium relative"
+                    style={{ color: 'var(--text-secondary)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = selected.accentColor }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -603,6 +636,11 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                       <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
                     View Credential
+                    {/* Underline that slides in on hover */}
+                    <span
+                      className="absolute left-0 bottom-[-2px] h-px w-0 group-hover:w-full transition-all duration-300 ease-out"
+                      style={{ background: selected.accentColor }}
+                    />
                   </a>
                 </div>
               )}
