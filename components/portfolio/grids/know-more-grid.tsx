@@ -289,13 +289,9 @@ interface KnowMoreGridProps {
 }
 
 const SUGGESTED_PROMPTS = [
-  "What repos are on Harish's GitHub?",
-  "Show his GitHub contribution graph",
-  "What models has he published on HuggingFace?",
+  "Can you summarize his GitHub profile?",
   "What's his ML/AI stack?",
-  "Any Kaggle competitions or medals?",
-  "Any published research or papers?",
-  "What certifications does he hold?",
+  "What are the professional certifications does he hold?",
   "What kind of roles is he open to?",
 ]
 
