@@ -12,9 +12,9 @@ import emailjs from '@emailjs/browser'
 //    Template variables used: {{from_name}}, {{from_email}}, {{idea_title}},
 //    {{message}}, {{attachment_name}}  (attach file via template if needed)
 // 4. Copy your Public Key from Account → API Keys
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID'   // ← replace
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID'  // ← replace
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY'   // ← replace
+const EMAILJS_SERVICE_ID  = 'service_2zdm5wh'   // ← replace
+const EMAILJS_TEMPLATE_ID = 'template_8kb81vf'  // ← replace
+const EMAILJS_PUBLIC_KEY  = 'QowKEERwmPMyZvWQD'   // ← replace
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Idea {
