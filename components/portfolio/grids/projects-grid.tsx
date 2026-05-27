@@ -15,7 +15,6 @@ interface SideProject {
   name: string
   description: string
   url: string
-  /** filename under /gif/ — e.g. "project-1" → /gif/project-1.png */
   iconFile: string
   tags: string[]
   longDescription: string
@@ -259,7 +258,7 @@ const sideProjects: SideProject[] = [
   },
 ]
 
-/* ─ Status config ─ */
+/* Status config */
 
 const statusConfig = {
   live:     { label: 'Live',     color: 'var(--accent)', bg: 'rgba(3,109,164,0.09)' },
@@ -267,7 +266,7 @@ const statusConfig = {
   archived: { label: 'Archived', color: 'var(--text-muted)', bg: 'rgba(122,154,176,0.10)' },
 }
 
-/* ─ Accent colour per project ─ */
+/* Accent colour per project */
 
 const accentColors: Record<string, string> = {
   '1': 'var(--accent)',
@@ -277,15 +276,6 @@ const accentColors: Record<string, string> = {
   '5': '#025a89',
   '6': '#036DA4',
 }
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   ProjectIcon
-   Plain <img> — no wrapper, no border, no background container.
-   Falls back to a tiny SVG initial if the image fails to load.
-   Size is passed in so the same component works at list size (40px)
-   and at the enlarged detail size in the sheet (~52px).
-   ───────────────────────────────────────────────────────────────────────────── */
-
 interface ProjectIconProps {
   project: SideProject
   size?: number
@@ -296,7 +286,6 @@ function ProjectIcon({ project, size = 40 }: ProjectIconProps) {
   const accent = accentColors[project.id]
 
   if (errored) {
-    // Minimal text fallback — no box, just a letter in the accent colour
     return (
       <span
         style={{
@@ -318,7 +307,6 @@ function ProjectIcon({ project, size = 40 }: ProjectIconProps) {
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`/gif/${project.iconFile}.png`}
       alt={project.name}
@@ -331,13 +319,12 @@ function ProjectIcon({ project, size = 40 }: ProjectIconProps) {
         objectFit: 'contain',
         flexShrink: 0,
         display:   'block',
-        /* No border-radius, no shadow, no background — just the raw image */
       }}
     />
   )
 }
 
-/* ─ File tree ─ */
+/* File tree */
 
 interface TreeNodeProps {
   node: ProjectStructureNode
@@ -463,7 +450,7 @@ function TreeNode({ node, depth = 0, accentColor, isLast = false, parentLines = 
   )
 }
 
-/* ─ Main component ─ */
+/* Main component */
 
 interface ProjectsGridProps { isMobile?: boolean }
 
@@ -569,7 +556,7 @@ export function ProjectsGrid({ isMobile }: ProjectsGridProps) {
           </div>
         </div>
 
-        {/* ── Bottom sheet detail overlay ── */}
+        {/* Bottom sheet detail overlay */}
         <GridBottomSheet
           open={!!selected}
           onClose={() => setSelected(null)}

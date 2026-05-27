@@ -109,7 +109,7 @@ const projects: WorkProject[] = [
   },
 ]
 
-// ── Image placeholder ─────────────────────────────────────────────────────────
+// Image placeholder
 function ImgPlaceholder({ color, label }: { color: string; label?: string }) {
   return (
     <div
@@ -125,7 +125,7 @@ function ImgPlaceholder({ color, label }: { color: string; label?: string }) {
   )
 }
 
-// ── Lightbox ─────────────────────────────────────────────────────────────────
+// Lightbox
 function Lightbox({
   images,
   startIndex,
@@ -224,7 +224,7 @@ function Lightbox({
   )
 }
 
-// ── Project card ─────────────────────────────────────────────────────────────
+// Project card
 function ProjectCard({ project, onClick }: { project: WorkProject; onClick: () => void }) {
   return (
     <button onClick={onClick} className="w-full text-left group">
@@ -277,11 +277,6 @@ interface WorkGridProps { isMobile?: boolean }
 export function WorkGrid({ isMobile }: WorkGridProps) {
   const [selected, setSelected] = useState<WorkProject | null>(null)
   const [lightbox, setLightbox] = useState<{ images: string[]; startIndex: number } | null>(null)
-
-  /*
-   * WorkGrid is the reference dimension for all grid cards (480 px).
-   * All other grids match this width via the same class.
-   */
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
     : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
@@ -305,7 +300,7 @@ export function WorkGrid({ isMobile }: WorkGridProps) {
         {/* Panel container */}
         <div className="flex-1 relative" style={{ overflow: 'clip' }}>
 
-          {/* ── Project list — always visible behind the sheet ── */}
+          {/* Project list — always visible behind the sheet */}
           <div
             className="absolute inset-0 no-scrollbar p-4"
             data-grid-scroll
@@ -318,7 +313,7 @@ export function WorkGrid({ isMobile }: WorkGridProps) {
             </div>
           </div>
 
-          {/* ── Bottom sheet detail overlay ── */}
+          {/* Bottom sheet detail overlay */}
           <GridBottomSheet
             open={!!selected}
             onClose={() => setSelected(null)}

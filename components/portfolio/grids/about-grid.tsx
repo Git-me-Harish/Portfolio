@@ -23,9 +23,8 @@ const slideVariant = {
   exit: { x: '-100%', opacity: 0 },
 }
 
-// ─── Precise Age Counter ──────────────────────────────────────────────────────
-// Set your actual DOB here (YYYY, MM-1, DD, HH, MM, SS)
-const DOB = new Date(2002, 0, 15, 0, 0, 0) // Jan 15 2002 — update this
+// Precise Age Counter : Calculates exact age in years with decimal precision, updating every 50ms
+const DOB = new Date(2002, 0, 15, 0, 0, 0)
 
 function usePreciseAge() {
   const [age, setAge] = useState('')
@@ -38,20 +37,16 @@ function usePreciseAge() {
       setAge(years.toFixed(10))
     }
     tick()
-    const id = setInterval(tick, 50) // ~20fps — smooth but not perf-heavy
+    const id = setInterval(tick, 50)
     return () => clearInterval(id)
   }, [])
   return age
 }
 
-// ─── Animated Highlighter ─────────────────────────────────────────────────────
-/**
- * Wraps specific substrings in an animated highlight span.
- * highlights: array of { text, color } — color defaults to accent blue
- */
+// Animated Highlighter:
 interface Highlight {
   text: string
-  color?: string // tailwind bg class or hex
+  color?: string
 }
 
 function HighlightedText({
@@ -66,7 +61,6 @@ function HighlightedText({
   const segments: Segment[] = []
 
   let remaining = children
-  // Sort highlights by their first occurrence to avoid index drift
   const sorted = [...highlights].sort(
     (a, b) => remaining.indexOf(a.text) - remaining.indexOf(b.text)
   )
@@ -97,7 +91,7 @@ function HighlightedText({
 
 function AnimatedHighlight({
   children,
-  color = 'var(--accent)', // default blue; pass hex or css var
+  color = 'var(--accent)',
 }: {
   children: string
   color?: string
@@ -116,7 +110,6 @@ function AnimatedHighlight({
 
   return (
     <span ref={ref} className="relative inline-block">
-      {/* Highlight background sweeps in */}
       <motion.span
         aria-hidden
         className="absolute inset-0 rounded-[3px] -mx-0.5 px-0.5"
@@ -127,26 +120,20 @@ function AnimatedHighlight({
         }}
         initial={{ scaleX: 0 }}
         animate={visible ? { scaleX: 1 } : { scaleX: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-      />
-      {/* Underline stroke */}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}/>
       <motion.span
         aria-hidden
         className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
         style={{ background: color, opacity: 0.7 }}
         initial={{ scaleX: 0 }}
         animate={visible ? { scaleX: 1 } : { scaleX: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
-      />
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}/>
       <span className="relative z-10">{children}</span>
     </span>
   )
 }
 
-// ─── Social Icons ─────────────────────────────────────────────────────────────
-/**
- * Brand hover colors — bg tints on hover per platform
- */
+// Social Icons:
 const socials = [
   {
     href: 'https://github.com/Git-me-Harish',
@@ -187,14 +174,12 @@ const socials = [
     ),
   },
   {
-    href: 'https://huggingface.co/', // ← update with your HF username
+    href: 'https://huggingface.co/', // ← update with your HuggingFace profile
     label: 'HuggingFace',
     hoverBg: '#FFD21E',
     hoverColor: '#000000',
-    // HuggingFace emoji-style "face" simplified path
     icon: (
       <>
-        {/* Simple HF-style face icon using circles + smile */}
         <circle cx="12" cy="11" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
         <circle cx="9" cy="10" r="1.2" />
         <circle cx="15" cy="10" r="1.2" />
@@ -204,7 +189,7 @@ const socials = [
         <path d="M20.5 8.5 Q22 11 20.5 13.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </>
     ),
-    svgFill: false, // uses stroke-based icon — don't set fill on svg
+    svgFill: false,
   },
 ]
 
@@ -240,8 +225,7 @@ function SocialButton({
         borderColor: hovered ? hoverBg : undefined,
         transform: hovered ? 'scale(1.1)' : 'scale(1)',
       }}
-      title={label}
-    >
+      title={label}>
       <svg
         width="14"
         height="14"
@@ -256,7 +240,7 @@ function SocialButton({
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// Main Component: AboutGrid:
 export function AboutGrid({ isMobile }: AboutGridProps) {
   const [view, setView] = useState<'main' | 'detail'>('main')
   const [emailCopied, setEmailCopied] = useState(false)
@@ -272,14 +256,11 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
   const resolvedMetaRows = metaRows.map((row) =>
     row.label === 'Age' ? { ...row, value: `${preciseAge} years old` } : row
   )
-
-  // Bio highlights — text must match exactly what's in the bio string
   const bioHighlights: Highlight[] = [
-    { text: 'deep learning, NLP', color: '#036DA4' },       // bice blue
-    { text: 'production ML pipelines', color: '#5EA3C0' },  // air superiority blue
-    { text: 'full-stack engineering', color: '#024e78' },   // deep navy
+    { text: 'deep learning, NLP', color: '#036DA4' },
+    { text: 'production ML pipelines', color: '#5EA3C0' },  
+    { text: 'full-stack engineering', color: '#024e78' },   
   ]
-
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
     : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
@@ -290,14 +271,10 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.04 }}
       className={cls}
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-    >
-      {/* Header */}
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
       <div className="px-5 pt-5 pb-4 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <span className="grid-label">About Me</span>
       </div>
-
-      {/* Sliding panels */}
       <div className="flex-1 relative" style={{ overflow: 'clip' }}>
         <AnimatePresence mode="wait" initial={false}>
           {view === 'main' ? (
@@ -313,14 +290,10 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
               style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
             >
               <div className="p-5">
-                {/* Profile photo */}
                 <div
                   className="w-full rounded-xl overflow-hidden mb-5 relative border"
-                  style={{ height: 220, borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}
-                >
+                  style={{ height: 220, borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
                   <Image src="/photo.jpeg" alt="Sri Harish" fill className="object-cover" priority />
-
-                  {/* Dither overlay */}
                   <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <pattern id="dp" width="4" height="4" patternUnits="userSpaceOnUse">
@@ -330,17 +303,12 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                     </defs>
                     <rect width="100%" height="100%" fill="url(#dp)" />
                   </svg>
-
-                  {/* Scan line */}
                   <motion.div
                     className="absolute inset-0"
                     style={{ backgroundImage: 'linear-gradient(to bottom, transparent 40%, rgba(3,109,164,0.06) 50%, transparent 60%)' }}
                     animate={{ y: ['-100%', '200%'] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-                  />
+                    transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}/>
                 </div>
-
-                {/* Bio */}
                 <h2 className="text-[16px] font-semibold leading-snug mb-3" style={{ color: 'var(--text-primary)' }}>
                   {"Hey, I'm [Sri Harish]. I build intelligent systems and extract insights from data."}
                 </h2>
@@ -349,8 +317,6 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                     {"AI/ML Engineer and Data Scientist focused on deep learning, NLP, and production ML pipelines. Currently building at the intersection of AI and full-stack engineering."}
                   </HighlightedText>
                 </p>
-
-                {/* Socials + email */}
                 <div className="flex items-center gap-2 mb-6 flex-wrap">
                   {socials.map(({ href, label, icon, hoverBg, hoverColor, svgFill }) => (
                     <SocialButton
@@ -382,8 +348,6 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                     )}
                   </button>
                 </div>
-
-                {/* Meta rows */}
                 <div className="space-y-0">
                   {resolvedMetaRows.slice(0, 3).map(({ label, value }) => (
                     <div key={label} className="border-t py-3.5" style={{ borderColor: 'var(--border)' }}>
@@ -394,8 +358,7 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                   <button
                     onClick={() => setView('detail')}
                     className="w-full border-t py-3.5 text-left group"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
+                    style={{ borderColor: 'var(--border)' }}>
                     <span className="grid-label block mb-1" style={{ color: 'var(--accent)' }}>More info</span>
                     <p className="text-[13px] flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
                       Experience, teaching, superpower, location
@@ -415,14 +378,11 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
               animate="center"
               exit="exit"
               transition={{ duration: 0.28, ease: [0.32, 0, 0.67, 0] }}
-              className="absolute inset-0 flex flex-col"
-            >
-              {/* Scrollable content */}
+              className="absolute inset-0 flex flex-col">
               <div
                 className="flex-1 no-scrollbar p-5"
                 data-grid-scroll
-                style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
-              >
+                style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}>
                 <div className="space-y-0">
                   {resolvedMetaRows.map(({ label, value }) => (
                     <div key={label} className="border-t py-4" style={{ borderColor: 'var(--border)' }}>
@@ -432,16 +392,13 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                         style={{
                           color: 'var(--text-primary)',
                           fontFamily: label === 'Age' ? 'var(--font-mono)' : undefined,
-                        }}
-                      >
+                        }}>
                         {value}
                       </p>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Capsule nav */}
               <div className="flex-shrink-0 px-5 py-4 border-t flex items-center justify-center" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2">
                   <button disabled className="btn-capsule-icon" aria-label="Previous">

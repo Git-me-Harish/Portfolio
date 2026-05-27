@@ -1,22 +1,10 @@
 'use client'
-
-/**
- * AchievementsGrid — v3
- * ─────────────────────
- * Fixes from v2:
- *  1. GridBottomSheet moved OUTSIDE the scrollable div (was getting clipped)
- *  2. CertCarousel rewritten — clean framer-motion slide, no stale-closure
- *     issues, proper single-visible-tile with back/forth infinite loop
- *  3. Carousel auto-advance uses useRef for current index to avoid stale closure
- *  4. 'tall' prop removed from BentoTile (was declared but never consumed)
- */
-
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { GridBottomSheet } from '../grid-bottom-sheet'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// Types:
 
 type AchievementCategory = 'award' | 'certification' | 'publication' | 'milestone'
 
@@ -31,12 +19,10 @@ interface Achievement {
   impact: string
   tags: string[]
   credentialUrl?: string
-  /** Place image at public/achievements/achieve-{id}.png (or .jpg) */
   imagePath?: string
 }
 
-// ── SVG Icons — bare, no box wrapper ─────────────────────────────────────────
-
+// SVG Icons — bare, no box wrapper:
 const TrophyIcon = ({ color }: { color: string }) => (
   <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
     <path d="M14 18c-4 0-7-3.134-7-7V5h14v6c0 3.866-3 7-7 7z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" fill={color} fillOpacity="0.08" />
@@ -94,8 +80,7 @@ const ICON_MAP: Record<string, React.FC<{ color: string }>> = {
   '6': MedalIcon,
 }
 
-// ── Data ───────────────────────────────────────────────────────────────────────
-
+// Data:
 const achievements: Achievement[] = [
   {
     id: '1',
@@ -181,12 +166,10 @@ const achievements: Achievement[] = [
   },
 ]
 
-// Certificate images — place PNGs at public/certificates/cert-{1..N}.png
 const CERT_COUNT = 10
 const CERT_IMAGES = Array.from({ length: CERT_COUNT }, (_, i) => `/certificates/cert-${i + 1}.png`)
 
-// ── BentoTile ─────────────────────────────────────────────────────────────────
-
+// BentoTile:
 interface BentoTileProps {
   item: Achievement
   hero?: boolean
@@ -268,7 +251,7 @@ function BentoTile({ item, hero, onClick, delay }: BentoTileProps) {
         </div>
       )}
 
-      {/* Date — absolute bottom-right */}
+      {/* Date absolute bottom-right */}
       <span
         className="absolute bottom-2.5 right-3 text-[9.5px]"
         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}
@@ -279,10 +262,6 @@ function BentoTile({ item, hero, onClick, delay }: BentoTileProps) {
   )
 }
 
-// ── CertCarousel ──────────────────────────────────────────────────────────────
-// One cert fully visible at a time. Framer-motion AnimatePresence handles
-// enter/exit. Auto-advances 3.5s. Pauses on hover. No stale closures.
-
 const SLIDE_TRANSITION = { duration: 0.38, ease: [0.32, 0, 0.67, 0] as [number, number, number, number] }
 
 function CertCarousel() {
@@ -290,7 +269,6 @@ function CertCarousel() {
   const [dir, setDir]         = useState<1 | -1>(1)
   const autoRef               = useRef<ReturnType<typeof setInterval> | null>(null)
   const total                 = CERT_IMAGES.length
-
   const navigate = useCallback((direction: 1 | -1) => {
     setDir(direction)
     setCurrent(c => (c + direction + total) % total)
@@ -406,8 +384,7 @@ function CertCarousel() {
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
+// Main component:
 interface AchievementsGridProps {
   isMobile?: boolean
 }
@@ -422,27 +399,20 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
   const currentIndex = selected ? achievements.findIndex(a => a.id === selected.id) : -1
 
   return (
-    // position:relative required — GridBottomSheet (absolute) is a sibling of
-    // the scroll container, so it positions against THIS element, not the window.
     <motion.div
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.20 }}
       className={cls}
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', position: 'relative' }}
-    >
-      {/* ── Header ── */}
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', position: 'relative' }}>
       <div className="px-5 pt-5 pb-4 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <span className="grid-label">Achievements</span>
       </div>
-
-      {/* ── Scrollable body ── */}
       <div
         className="flex-1 no-scrollbar"
         data-grid-scroll
-        style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
-      >
-        {/* ─── BENTO GRID ─────────────────────────────────────────────────── */}
+        style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        {/* BENTO GRID */}
         <div className="p-3.5 pb-2">
           <div
             style={{
@@ -452,28 +422,19 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
               gap: 7,
             }}
           >
-            {/* Hero — cols 1-2, row 1 */}
             <div style={{ gridColumn: '1 / 3', gridRow: '1 / 2' }}>
               <BentoTile item={achievements[0]} hero onClick={() => setSelected(achievements[0])} delay={0.04} />
             </div>
-
-            {/* Tall right — col 3, rows 1-2 */}
             <div style={{ gridColumn: '3 / 4', gridRow: '1 / 3' }}>
               <BentoTile item={achievements[2]} onClick={() => setSelected(achievements[2])} delay={0.08} />
             </div>
-
-            {/* Small A — col 1, row 2 */}
             <div style={{ gridColumn: '1 / 2', gridRow: '2 / 3' }}>
               <BentoTile item={achievements[1]} onClick={() => setSelected(achievements[1])} delay={0.11} />
             </div>
-
-            {/* Small B — col 2, row 2 */}
             <div style={{ gridColumn: '2 / 3', gridRow: '2 / 3' }}>
               <BentoTile item={achievements[3]} onClick={() => setSelected(achievements[3])} delay={0.14} />
             </div>
           </div>
-
-          {/* Overflow achievements — compact list */}
           {achievements.length > 4 && (
             <div className="mt-2.5 space-y-1.5">
               {achievements.slice(4).map((item, idx) => {
@@ -500,8 +461,7 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                       const el = e.currentTarget as HTMLElement
                       el.style.borderColor = 'var(--border)'
                       el.style.background = 'var(--bg-elevated)'
-                    }}
-                  >
+                    }}>
                     <Icon color={item.accentColor} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -513,8 +473,7 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                     </div>
                     <span
                       className="text-[10px] flex-shrink-0"
-                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}
-                    >
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {item.date}
                     </span>
                   </motion.button>
@@ -523,36 +482,27 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
             </div>
           )}
         </div>
-
-        {/* Divider */}
         <div className="mx-4 my-3 border-t" style={{ borderColor: 'var(--border)' }} />
 
-        {/* ─── CERTIFICATE CAROUSEL ────────────────────────────────────────── */}
+        {/* CERTIFICATE CAROUSEL */}
         <CertCarousel />
       </div>
-
-      {/* ── GridBottomSheet — sibling of scroll div, not inside it ── */}
-      {/* This is the critical fix: absolute positioning escapes overflow:auto  */}
       <GridBottomSheet
         open={!!selected}
         onClose={() => setSelected(null)}
-        accentColor={selected?.accentColor ?? 'var(--border-hover)'}
-      >
+        accentColor={selected?.accentColor ?? 'var(--border-hover)'}>
         {selected && (
           <>
             <div
               className="flex-1 no-scrollbar px-5 pb-4"
               data-grid-scroll
-              style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
-            >
-              {/* Icon + category */}
+              style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}>
               <div className="mb-4 flex items-center gap-2.5">
                 {(() => { const Icon = ICON_MAP[selected.id] ?? TrophyIcon; return <Icon color={selected.accentColor} /> })()}
                 <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: selected.accentColor }}>
                   {selected.category}
                 </span>
               </div>
-
               <h2 className="text-[20px] font-semibold leading-tight mb-1.5" style={{ color: 'var(--text-primary)' }}>
                 {selected.title}
               </h2>
@@ -565,21 +515,16 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
               <p className="text-[13px] leading-relaxed mb-7" style={{ color: 'var(--text-secondary)' }}>
                 {selected.description}
               </p>
-
-              {/* Impact */}
               <div className="border-t pt-5 mb-7" style={{ borderColor: 'var(--border)' }}>
                 <span className="grid-label block mb-3">Impact</span>
                 <div
                   className="rounded-xl p-4"
-                  style={{ background: `${selected.accentColor}0d`, border: `1px solid ${selected.accentColor}28` }}
-                >
+                  style={{ background: `${selected.accentColor}0d`, border: `1px solid ${selected.accentColor}28` }}>
                   <p className="text-[13px] font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                     {selected.impact}
                   </p>
                 </div>
               </div>
-
-              {/* Tags */}
               <div className="border-t pt-5" style={{ borderColor: 'var(--border)' }}>
                 <span className="grid-label block mb-3">Stack / Domain</span>
                 <div className="flex flex-wrap gap-2">
@@ -587,15 +532,12 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                     <span
                       key={t}
                       className="px-2.5 py-1 rounded-lg text-[11px] font-medium"
-                      style={{ background: `${selected.accentColor}18`, color: selected.accentColor }}
-                    >
+                      style={{ background: `${selected.accentColor}18`, color: selected.accentColor }}>
                       {t}
                     </span>
                   ))}
                 </div>
               </div>
-
-              {/* Memories — achievement photo */}
               {selected.imagePath && (
                 <div className="border-t pt-5 mt-6" style={{ borderColor: 'var(--border)' }}>
                   <span className="grid-label block mb-3">Memories</span>
@@ -605,20 +547,16 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                       height: 200,
                       background: `${selected.accentColor}0a`,
                       border: `1px solid ${selected.accentColor}22`,
-                    }}
-                  >
+                    }}>
                     <Image
                       src={selected.imagePath}
                       alt={`${selected.title} memory`}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 440px"
-                    />
+                      sizes="(max-width: 768px) 100vw, 440px"/>
                   </div>
                 </div>
               )}
-
-              {/* Credential link — hover-reveal underline, bottom-center */}
               {selected.credentialUrl && (
                 <div className="pt-6 mt-2 flex justify-center">
                   <a
@@ -628,36 +566,29 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                     className="group inline-flex items-center gap-1.5 text-[11.5px] font-medium relative"
                     style={{ color: 'var(--text-secondary)' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = selected.accentColor }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
-                  >
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
                     View Credential
-                    {/* Underline that slides in on hover */}
                     <span
                       className="absolute left-0 bottom-[-2px] h-px w-0 group-hover:w-full transition-all duration-300 ease-out"
-                      style={{ background: selected.accentColor }}
-                    />
+                      style={{ background: selected.accentColor }}/>
                   </a>
                 </div>
               )}
             </div>
-
-            {/* Capsule nav */}
             <div
               className="flex-shrink-0 px-5 py-4 border-t flex items-center justify-center"
-              style={{ borderColor: 'var(--border)' }}
-            >
+              style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => currentIndex > 0 && setSelected(achievements[currentIndex - 1])}
                   disabled={currentIndex === 0}
                   className="btn-capsule-icon"
-                  aria-label="Previous"
-                >
+                  aria-label="Previous">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
@@ -667,8 +598,7 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
                   onClick={() => currentIndex < achievements.length - 1 && setSelected(achievements[currentIndex + 1])}
                   disabled={currentIndex === achievements.length - 1}
                   className="btn-capsule-icon"
-                  aria-label="Next"
-                >
+                  aria-label="Next">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M9 18l6-6-6-6" />
                   </svg>

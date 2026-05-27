@@ -3,17 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── Palette: Bice Blue family ────────────────────────────────────────
-   #036DA4  Bice blue      — primary accent / CTAs
-   #024e78  Deep navy      — deeper accent, hover states
-   #025a89  Mid navy       — intermediate shade
-   #5EA3C0  Air superiority blue — secondary accent
-   #B9D9DC  Light blue     — highlights, subtle tints
-   #DBEBE2  Honeydew       — light bg-card, light borders
-   #FDFCE8  Ivory          — light bg primary
-   ──────────────────────────────────────────────────────────────────── */
-
-/* ── Dark theme (default) ─────────────────────────────────────────── */
+/* Dark theme (default) */
 :root {
   --bg:              #080e12;
   --bg-card:         #0d161d;
@@ -66,20 +56,20 @@
   --radius:              0.75rem;
 }
 
-/* ── Light theme ──────────────────────────────────────────────────── */
+/* Light theme */
 .light {
   /* Full blue palette light mode — no warm tones at all */
-  --bg:              #dce8f0;   /* B9D9DC-family — clear blue page bg */
-  --bg-card:         #eef5f9;   /* lighter card surface, cool white-blue */
-  --bg-elevated:     #d0e3ed;   /* depressed surface / hover */
-  --bg-hover:        #c4d9e8;   /* hover state */
-  --border:          #a8c8dc;   /* blue-tinted border, visible but not harsh */
-  --border-hover:    #7aaec8;   /* stronger on hover */
-  --text-primary:    #071624;   /* near-black, strongly blue-tinted */
-  --text-secondary:  #1e4060;   /* mid blue — fully readable */
-  --text-muted:      #5a84a0;   /* muted — labels, metadata */
-  --accent:          #036DA4;   /* Bice blue — primary actions */
-  --accent-deep:     #024e78;   /* deep navy — hover on accent */
+  --bg:              #dce8f0;   
+  --bg-card:         #eef5f9;   
+  --bg-elevated:     #d0e3ed;   
+  --bg-hover:        #c4d9e8;   
+  --border:          #a8c8dc;   
+  --border-hover:    #7aaec8;   
+  --text-primary:    #071624;   
+  --text-secondary:  #1e4060;   
+  --text-muted:      #5a84a0;   
+  --accent:          #036DA4;   
+  --accent-deep:     #024e78; 
   --accent-mid:      #025a89;
   --accent-light:    #5EA3C0;
   --accent-pale:     #B9D9DC;
@@ -141,7 +131,7 @@
   }
 }
 
-/* ── Scrollbar ────────────────────────────── */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
@@ -150,14 +140,14 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Grid scroll sentinel ─────────────────── */
+/* Grid scroll sentinel */
 [data-grid-scroll] {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
 
-/* ── Capsule button ───────────────────────── */
+/* Capsule button */
 .btn-capsule {
   display: inline-flex;
   align-items: center;
@@ -203,7 +193,7 @@
 }
 .btn-capsule-icon:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* ── Theme toggle ─────────────────────────── */
+/* Theme toggle */
 .theme-toggle-group {
   display: flex;
   align-items: center;
@@ -232,7 +222,7 @@
 }
 .theme-toggle-btn:hover:not(.active) { color: var(--text-secondary); }
 
-/* ── Card label ───────────────────────────── */
+/* Card label */
 .grid-label {
   font-size: 10px;
   font-weight: 700;
@@ -241,10 +231,10 @@
   color: var(--text-muted);
 }
 
-/* ── Sheet row border utility ─────────────── */
+/* Sheet row border utility */
 .sheet-row-border { border-color: var(--sheet-row-border); }
 
-/* ── Reduced motion ───────────────────────── */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -252,14 +242,14 @@
   }
 }
 
-/* ── Responsive: tablet cards (768-1024px) ── */
+/* Responsive: tablet cards (768-1024px)  */
 @media (max-width: 1024px) and (min-width: 901px) {
   .grid-card-desktop {
     width: 380px !important;
   }
 }
 
-/* ── Responsive: small desktop (1024-1280px) */
+/* Responsive: small desktop (1024-1280px) */
 @media (max-width: 1280px) and (min-width: 1025px) {
   .grid-card-desktop {
     width: 420px !important;

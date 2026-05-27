@@ -104,7 +104,7 @@ const stageConfig = {
   building: { label: 'Building', color: 'var(--accent)', bg: 'rgba(3,109,164,0.12)' },
 }
 
-// ─── Collaborate Form ─────────────────────────────────────────────────────────
+// Collaborate Form:
 
 type FormState = 'idle' | 'sending' | 'success' | 'error'
 
@@ -182,7 +182,7 @@ function CollaborateForm() {
     }
   }
 
-  // ── Shared input style (CSS-var-aware for dark/light) ──
+  // Shared input style (CSS-var-aware for dark/light):
   const inputCls = [
     'w-full px-3 py-2 rounded-lg text-[12px] outline-none transition-all',
     'border focus:border-[var(--accent)]',
@@ -454,28 +454,6 @@ function CollaborateForm() {
   )
 }
 
-// ─── CSS variables to add to your global stylesheet ──────────────────────────
-// (Add these inside your existing :root / [data-theme="dark"] / [data-theme="light"] blocks)
-//
-// Dark mode (already your default):
-//   --collab-bg:             var(--bg-elevated);
-//   --collab-border:         rgba(3,109,164,0.17);
-//   --collab-input-bg:       var(--bg-card);
-//   --collab-input-border:   rgba(3,109,164,0.19);
-//   --collab-input-text:     #e8f5f0;
-//   --collab-placeholder:    #4a6b5c;
-//   --collab-dropzone-bg:    #0a180f;
-//
-// Light mode ([data-theme="light"] or .light):
-//   --collab-bg:             #f0faf5;
-//   --collab-border:         rgba(3,109,164,0.25);
-//   --collab-input-bg:       #ffffff;
-//   --collab-input-border:   #d0e8dc;
-//   --collab-input-text:     var(--bg-elevated);
-//   --collab-placeholder:    #8aada0;
-//   --collab-dropzone-bg:    #f8fdfb;
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface IdeasGridProps { isMobile?: boolean }
 
 export function IdeasGrid({ isMobile }: IdeasGridProps) {
@@ -503,7 +481,7 @@ export function IdeasGrid({ isMobile }: IdeasGridProps) {
       {/* Panel container */}
       <div className="flex-1 relative" style={{ overflow: 'clip' }}>
 
-        {/* ── Ideas list — always visible ── */}
+        {/* Ideas list — always visible */}
         <div
           className="absolute inset-0 no-scrollbar p-4"
           data-grid-scroll
@@ -571,7 +549,7 @@ export function IdeasGrid({ isMobile }: IdeasGridProps) {
           </div>
         </div>
 
-        {/* ── Bottom sheet detail overlay ── */}
+        {/* Bottom sheet detail overlay */}
         <GridBottomSheet
           open={!!selected}
           onClose={() => setSelected(null)}

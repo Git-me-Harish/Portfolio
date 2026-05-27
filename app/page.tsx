@@ -43,13 +43,6 @@ export default function Portfolio() {
     c.addEventListener('scroll', checkScroll, { passive: true })
     checkScroll()
 
-    /**
-     * Wheel handler strategy:
-     * ─ If the pointer is over a VERTICALLY scrollable child (a grid card),
-     *   let that child handle the event — do NOT intercept.
-     * ─ If it's over the track background itself, convert vertical → horizontal.
-     * ─ Horizontal wheel events (trackpad pan) are always passed through.
-     */
     const onWheel = (e: WheelEvent) => {
       // Pure horizontal trackpad gesture — let browser handle
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
@@ -100,7 +93,7 @@ export default function Portfolio() {
     </div>
   )
 
-  /* ── Mobile layout ── */
+  /* Mobile layout */
   if (isMobile) return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <header
@@ -115,10 +108,10 @@ export default function Portfolio() {
         <CareerGrid isMobile />
         <WorkGrid isMobile />
         <ProjectsGrid isMobile />
-        {/* ── New: Achievements before Ideas ── */}
+        {/* Achievements before Ideas */}
         <AchievementsGrid isMobile />
         <IdeasGrid isMobile />
-        {/* ── New: Know More after Ideas ── */}
+        {/* Know More after Ideas ── */}
         <KnowMoreGrid isMobile />
       </div>
     </main>
@@ -195,10 +188,10 @@ export default function Portfolio() {
         <CareerGrid />
         <WorkGrid />
         <ProjectsGrid />
-        {/* ── New: Achievements before Ideas ── */}
+        {/* Achievements before Ideas */}
         <AchievementsGrid />
         <IdeasGrid />
-        {/* ── New: Know More after Ideas ── */}
+        {/* Know More after Ideas */}
         <KnowMoreGrid />
         <div className="flex-shrink-0 w-1" />
       </div>

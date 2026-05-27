@@ -7,10 +7,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INLINED: AnimatedBeam (kept for compatibility / unused path)
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface AnimatedBeamProps {
   containerRef: React.RefObject<HTMLDivElement | null>
   fromRef: React.RefObject<HTMLDivElement | null>
@@ -120,10 +116,6 @@ function AnimatedBeam({
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INLINED: TravelingBeam — animateMotion orb along SVG path
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface TravelingBeamProps {
   containerRef: React.RefObject<HTMLDivElement | null>
   fromRef: React.RefObject<HTMLDivElement | null>
@@ -205,11 +197,7 @@ function TravelingBeam({
     </svg>
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 // INLINED: InteractiveGridPattern
-// ─────────────────────────────────────────────────────────────────────────────
-
 function InteractiveGridPattern({
   width = 32, height = 32,
   squares = [20, 18] as [number, number],
@@ -231,11 +219,8 @@ function InteractiveGridPattern({
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Chat background gradient — light and dark mode aware
 // Matches the soft colour-graded style in the reference screenshot.
-// ─────────────────────────────────────────────────────────────────────────────
-
 function ChatBackground() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
@@ -265,10 +250,7 @@ function ChatBackground() {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 type SearchPlatform = 'github' | 'linkedin' | 'kaggle' | 'huggingface' | 'web' | null
 
 type RichCardType = 'contributions' | null
@@ -296,10 +278,6 @@ const SUGGESTED_PROMPTS = [
   "Any Kaggle competitions or medals?",
   "Show me his AI-related project experience",
 ]
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Markdown renderer
-// ─────────────────────────────────────────────────────────────────────────────
 
 function renderMarkdown(text: string): React.ReactNode[] {
   const lines = text.split('\n')
@@ -336,7 +314,6 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
 function parseInline(text: string): React.ReactNode[] {
   const parts: React.ReactNode[] = []
-  // Order matters: bold → code → markdown link [text](url) → bare https://...
   const regex = /(\*\*(.+?)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s,)>\]"]+))/g
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -353,7 +330,6 @@ function parseInline(text: string): React.ReactNode[] {
         </code>
       )
     } else if (match[4] && match[5]) {
-      // [label](url) markdown link
       parts.push(
         <a key={key++} href={match[5]} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-0.5 underline underline-offset-2 transition-opacity hover:opacity-70"
@@ -365,7 +341,6 @@ function parseInline(text: string): React.ReactNode[] {
         </a>
       )
     } else if (match[6]) {
-      // bare https://... URL
       const url = match[6]
       const display = url.replace(/^https?:\/\//, '')
       parts.push(
@@ -384,11 +359,7 @@ function parseInline(text: string): React.ReactNode[] {
   if (lastIndex < text.length) parts.push(text.slice(lastIndex))
   return parts
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Avatar icons for chat bubbles
-// ─────────────────────────────────────────────────────────────────────────────
-
 function UserAvatar() {
   return (
     <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
@@ -431,11 +402,7 @@ function AssistantAvatar() {
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// UI pieces
-// ─────────────────────────────────────────────────────────────────────────────
-
+// UI pieces:
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 px-3 py-2.5">
@@ -535,12 +502,6 @@ function SearchIndicator({ platform }: { platform?: SearchPlatform }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// ContributionGraph — native React renderer, consumes /api/github-contrib JSON
-// No external SVG — full control over colors, sizing, responsiveness
-// ─────────────────────────────────────────────────────────────────────────────
-
 const GITHUB_USERNAME = 'Git-me-Harish'
 
 // Level → accent-green opacity, matching GitHub's 4-level scale
@@ -573,13 +534,6 @@ function getMonthLabels(weeks: ContribWeek[]): { idx: number; label: string }[] 
 
 // Tooltip state
 type TooltipState = { date: string; count: number; x: number; y: number } | null
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ContributionSVG — auto-fits the heatmap grid to the container width.
-// Renders as a native <svg> so month labels and cells scroll together
-// and cell size scales to always fill available space perfectly.
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface ContribSVGProps {
   weeks:        ContribWeek[]
   monthLabels:  { idx: number; label: string }[]
@@ -715,7 +669,7 @@ function ContributionGraph({ year: propYear }: { year?: number }) {
 
   const profileUrl = `https://github.com/${GITHUB_USERNAME}`
 
-  // ── Error state ─────────────────────────────────────────────────────────
+  // Error state:
   if (error) {
     return (
       <div className="rounded-xl border p-3 flex items-center justify-between gap-3"
@@ -735,7 +689,7 @@ function ContributionGraph({ year: propYear }: { year?: number }) {
     )
   }
 
-  // ── Loading skeleton ─────────────────────────────────────────────────────
+  // Loading skeleton:
   if (!data) {
     return (
       <div className="rounded-xl border p-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
@@ -766,7 +720,7 @@ function ContributionGraph({ year: propYear }: { year?: number }) {
 
   const monthLabels = getMonthLabels(data.weeks)
 
-  // ── Rendered graph ───────────────────────────────────────────────────────
+  // Rendered graph
   return (
     <div className="rounded-xl border p-3 relative"
       style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}
@@ -813,14 +767,7 @@ function ContributionGraph({ year: propYear }: { year?: number }) {
         </a>
       </div>
 
-      {/*
-        ── Responsive grid ───────────────────────────────────────────────
-        Rendered as a single SVG so month labels + cells scroll together.
-        Cell size is computed to fill the card width exactly — no overflow,
-        no horizontal scroll needed. On very narrow screens (<260px) we
-        fall back to a horizontal scroll with a fixed 10px cell size.
-        ─────────────────────────────────────────────────────────────────
-      */}
+      {/* Responsive grid */}
       <ContributionSVG
         weeks={data.weeks}
         monthLabels={monthLabels}

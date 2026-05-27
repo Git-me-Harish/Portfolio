@@ -5,12 +5,6 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GridBottomSheet } from '../grid-bottom-sheet'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Animated gradient grid background for job cards
-// Light mode: subtle warm grid lines with an accent-coloured gradient wash
-// Dark mode:  deeper lines with a slightly brighter wash
-// ─────────────────────────────────────────────────────────────────────────────
-
 function CardGridBackground({ color }: { color: string }) {
   const patternId = `card-grid-${color.replace('#', '')}`
   return (
@@ -47,8 +41,7 @@ function CardGridBackground({ color }: { color: string }) {
         style={{
           background: 'linear-gradient(135deg, transparent 40%, var(--bg-elevated) 100%)',
           opacity: 0.55,
-        }}
-      />
+        }}/>
       <style>{`
         @keyframes card-glow {
           0%   { opacity: 0.6; transform: scale(1); }
@@ -59,10 +52,7 @@ function CardGridBackground({ color }: { color: string }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface JobProject {
   id: string
   title: string
@@ -88,18 +78,15 @@ interface Job {
   iconBg: string
   iconText: string
   iconLetter: string
-  iconImage?: string           // e.g. '/icons/icon-1.png'
+  iconImage?: string         
   description: string
   achievements: string[]
   learned: string[]
   projects: JobProject[]
-  isEducation?: boolean        // true → renders as a graduation marker
+  isEducation?: boolean 
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Data: career timeline with jobs and education markers. Each job has metadata, achievements, learnings, and projects to show in the detail panel. Education entries are styled differently and can be mixed in the timeline.
 const jobs: Job[] = [
   {
     id: '1',
@@ -315,10 +302,7 @@ type PanelView =
 
 interface CareerGridProps { isMobile?: boolean }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Company icon — image with letter fallback
-// ─────────────────────────────────────────────────────────────────────────────
-
 function CompanyIcon({
   job,
   size = 'md',
@@ -339,8 +323,7 @@ function CompanyIcon({
           height: dim,
           background: 'var(--bg-elevated)',
           borderColor: 'var(--border)',
-        }}
-      >
+        }}>
         <Image
           src={job.iconImage}
           alt={job.company}
@@ -351,35 +334,26 @@ function CompanyIcon({
       </div>
     )
   }
-
   return (
     <div
       className={`flex-shrink-0 flex items-center justify-center font-bold ${rounded} ${textSize}`}
-      style={{ width: dim, height: dim, background: job.iconBg, color: job.iconText }}
-    >
+      style={{ width: dim, height: dim, background: job.iconBg, color: job.iconText }}>
       {job.iconLetter}
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Education graduation marker
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Education graduation marker — styled differently from regular job cards, with a dashed border and "Edu" badge
 function GraduationMarker({ job, onClick }: { job: Job; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className="absolute left-0 right-0 text-left group"
-      style={{ top: (YEARS[0] - job.endYear) * YEAR_H + YEAR_H / 2 - 18, height: 36 }}
-    >
+      style={{ top: (YEARS[0] - job.endYear) * YEAR_H + YEAR_H / 2 - 18, height: 36 }}>
       <div
         className="w-full h-full flex items-center gap-2.5 px-3 rounded-xl border transition-all hover:border-[var(--border-hover)] overflow-hidden relative"
-        style={{ background: `${job.color}10`, borderColor: `${job.color}40`, borderStyle: 'dashed' }}
-      >
+        style={{ background: `${job.color}10`, borderColor: `${job.color}40`, borderStyle: 'dashed' }}>
         <CardGridBackground color={job.color} />
         <div className="relative z-10 flex items-center gap-2.5 w-full">
-          {/* 👇 Changed from 🎓 to CompanyIcon */}
           <CompanyIcon job={job} size="sm" />
           
           <div className="flex-1 min-w-0">
@@ -392,8 +366,7 @@ function GraduationMarker({ job, onClick }: { job: Job; onClick: () => void }) {
           </div>
           <span
             className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md"
-            style={{ background: `${job.color}20`, color: job.color }}
-          >
+            style={{ background: `${job.color}20`, color: job.color }}>
             Edu
           </span>
         </div>
@@ -402,10 +375,7 @@ function GraduationMarker({ job, onClick }: { job: Job; onClick: () => void }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Main component: CareerGrid — shows job timeline with interactive bottom sheet details
 export function CareerGrid({ isMobile }: CareerGridProps) {
   const [panel, setPanel] = useState<PanelView>({ type: 'timeline' })
 
@@ -423,35 +393,27 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.09 }}
       className={cls}
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-    >
-      {/* Header */}
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
       <div className="px-5 pt-5 pb-4 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <span className="grid-label">Career Journey</span>
       </div>
-
-      {/* Panel container */}
       <div className="flex-1 relative" style={{ overflow: 'clip' }}>
-
-        {/* ── Always-visible timeline ── */}
         <div
           className="absolute inset-0 no-scrollbar"
           data-grid-scroll
           style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
         >
           {isMobile ? (
-            /* ── Mobile: stacked cards ── */
+            /* Mobile: stacked cards */
             <div className="p-4 space-y-3">
               {/* Education first (chronologically last, show at top for highlight) */}
                 {eduMarkers.map(edu => (
                   <button key={edu.id} onClick={() => setPanel({ type: 'job', job: edu })} className="w-full text-left">
                     <div
                       className="rounded-xl p-3.5 border relative overflow-hidden transition-all hover:border-[var(--border-hover)]"
-                      style={{ background: `${edu.color}0d`, borderColor: `${edu.color}40`, borderStyle: 'dashed' }}
-                    >
+                      style={{ background: `${edu.color}0d`, borderColor: `${edu.color}40`, borderStyle: 'dashed' }}>
                       <CardGridBackground color={edu.color} />
                       <div className="relative z-10 flex items-center gap-3">
-                        {/* 👇 Changed from 🎓 to CompanyIcon */}
                         <CompanyIcon job={edu} size="md" />
                         
                         <div>
@@ -470,8 +432,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                 <button key={job.id} onClick={() => setPanel({ type: 'job', job })} className="w-full text-left group">
                   <div
                     className="rounded-xl p-4 border hover:border-[var(--border-hover)] transition-all relative overflow-hidden"
-                    style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
-                  >
+                    style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}>
                     <CardGridBackground color={job.color} />
                     <div className="relative z-10 flex items-center gap-3">
                       <CompanyIcon job={job} size="sm" />
@@ -493,7 +454,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
               ))}
             </div>
           ) : (
-            /* ── Desktop: year-axis timeline ── */
+            /* Desktop: year-axis timeline */
             <div className="flex pt-4 pb-4 pl-4 pr-3" style={{ minHeight: '100%' }}>
 
               {/* Year labels */}
@@ -502,8 +463,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                   <div
                     key={y}
                     className="flex items-start justify-end pr-2 text-[10px] font-mono"
-                    style={{ height: YEAR_H, color: 'var(--text-muted)', paddingTop: 3 }}
-                  >
+                    style={{ height: YEAR_H, color: 'var(--text-muted)', paddingTop: 3 }}>
                     {y}
                   </div>
                 ))}
@@ -512,8 +472,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
               {/* Hatched accent bar */}
               <div
                 className="flex-shrink-0 rounded-sm overflow-hidden relative"
-                style={{ width: 14, height: YEARS.length * YEAR_H }}
-              >
+                style={{ width: 14, height: YEARS.length * YEAR_H }}>
                 <div className="absolute inset-0" style={{ background: 'var(--accent)', opacity: 0.18 }} />
                 <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.55 }}>
                   <defs>
@@ -532,8 +491,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                       color: '#036DA4',
                       opacity: 0.9,
                       lineHeight: 1,
-                    }}
-                  >
+                    }}>
                     Freelance &amp; Side Projects
                   </span>
                 </div>
@@ -553,26 +511,23 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                   const rawH = (job.endYear - job.startYear) * YEAR_H
                   const height = Math.max(rawH - 8, YEAR_H * 0.65)
                   const isShort = height < YEAR_H * 1.1
-
                   return (
                     <button
                       key={job.id}
                       onClick={() => setPanel({ type: 'job', job })}
                       className="absolute left-0 right-0 text-left group"
-                      style={{ top, height }}
-                    >
+                      style={{ top, height }}>
                       <div
                         className="w-full h-full rounded-xl border transition-all hover:border-[var(--border-hover)] overflow-hidden relative"
-                        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
-                      >
+                        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}>
+
                         {/* Animated grid background */}
                         <CardGridBackground color={job.color} />
 
                         {/* Left accent bar */}
                         <div
                           className="absolute left-0 top-0 bottom-0 w-[2px] rounded-l-xl z-10"
-                          style={{ background: job.color, opacity: 0.6 }}
-                        />
+                          style={{ background: job.color, opacity: 0.6 }}/>
 
                         {/* Content */}
                         <div className={`relative z-10 flex items-start gap-2.5 ${isShort ? 'p-2' : 'p-3'}`}>
@@ -606,7 +561,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
           )}
         </div>
 
-        {/* ── Bottom sheet — job / project detail ── */}
+        {/* Bottom sheet job / project detail */}
         <GridBottomSheet
           open={panel.type !== 'timeline'}
           onClose={() => {
@@ -617,11 +572,10 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
             panel.type === 'job' ? panel.job.color
             : panel.type === 'project' ? panel.project.color
             : 'var(--border-hover)'
-          }
-        >
+          }>
           <AnimatePresence mode="wait" initial={false}>
 
-            {/* ── Job Detail ── */}
+            {/* Job Detail */}
             {panel.type === 'job' && (
               <motion.div
                 key={`job-${panel.job.id}`}
@@ -629,18 +583,15 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col min-h-0"
-              >
+                className="flex-1 flex flex-col min-h-0">
                 <div
                   className="flex-1 no-scrollbar px-5 pb-4"
                   data-grid-scroll
-                  style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
-                >
+                  style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}>
                   {/* Icon */}
                   <div className="mb-5">
                     <CompanyIcon job={panel.job} size="lg" />
                   </div>
-
                   <h2 className="text-[21px] font-semibold leading-tight mb-1" style={{ color: 'var(--sheet-text)' }}>
                     {panel.job.title}
                     {!panel.job.isEducation && ` - ${panel.job.company}`}
@@ -649,7 +600,6 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                     {panel.job.type} · {panel.job.startDate}
                     {panel.job.startDate !== panel.job.endDate && ` — ${panel.job.endDate}`}
                   </p>
-
                   <p className="text-[13px] leading-relaxed mb-7" style={{ color: 'var(--sheet-text-secondary)' }}>
                     {panel.job.description}
                   </p>
@@ -693,16 +643,13 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                           <button
                             key={project.id}
                             onClick={() => setPanel({ type: 'project', project, job: panel.job })}
-                            className="w-full text-left group"
-                          >
+                            className="w-full text-left group">
                             <div
                               className="flex items-center gap-3 p-3.5 rounded-xl border transition-all hover:border-[var(--border-hover)]"
-                              style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
-                            >
+                              style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}>
                               <div
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                                style={{ background: panel.job.iconBg, color: panel.job.color, border: `1px solid ${panel.job.color}30` }}
-                              >
+                                style={{ background: panel.job.iconBg, color: panel.job.color, border: `1px solid ${panel.job.color}30` }}>
                                 {project.title.charAt(0)}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -724,12 +671,10 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                     </div>
                   )}
                 </div>
-
                 {/* Nav */}
                 <div
                   className="flex-shrink-0 px-5 py-4 border-t flex items-center justify-center"
-                  style={{ borderColor: 'var(--sheet-row-border)' }}
-                >
+                  style={{ borderColor: 'var(--sheet-row-border)' }}>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -738,8 +683,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                       }}
                       disabled={jobs.findIndex(j => j.id === panel.job.id) === 0}
                       className="btn-capsule-icon"
-                      aria-label="Previous"
-                    >
+                      aria-label="Previous">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M15 18l-6-6 6-6" />
                       </svg>
@@ -752,8 +696,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                       }}
                       disabled={jobs.findIndex(j => j.id === panel.job.id) === jobs.length - 1}
                       className="btn-capsule-icon"
-                      aria-label="Next"
-                    >
+                      aria-label="Next">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M9 18l6-6-6-6" />
                       </svg>
@@ -763,7 +706,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
               </motion.div>
             )}
 
-            {/* ── Project Detail ── */}
+            {/* Project Detail */}
             {panel.type === 'project' && (
               <motion.div
                 key={`project-${panel.project.id}`}
@@ -771,31 +714,25 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col min-h-0"
-              >
+                className="flex-1 flex flex-col min-h-0">
                 <div
                   className="flex-1 no-scrollbar px-5 pb-4"
                   data-grid-scroll
-                  style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}
-                >
+                  style={{ overflowY: 'auto', overscrollBehavior: 'contain' }}>
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold mb-5"
-                    style={{ background: panel.job.iconBg, color: panel.project.color, border: `1px solid ${panel.project.color}30` }}
-                  >
+                    style={{ background: panel.job.iconBg, color: panel.project.color, border: `1px solid ${panel.project.color}30` }}>
                     {panel.project.title.charAt(0)}
                   </div>
-
                   <h2 className="text-[21px] font-semibold leading-tight mb-1" style={{ color: 'var(--sheet-text)' }}>
                     {panel.project.title}
                   </h2>
                   <p className="text-[11px] font-mono mb-6" style={{ color: 'var(--text-muted)' }}>
                     {panel.project.company} · {panel.project.context} · {panel.project.year}
                   </p>
-
                   <p className="text-[13px] leading-relaxed mb-7" style={{ color: 'var(--sheet-text-secondary)' }}>
                     {panel.project.description}
                   </p>
-
                   <div className="border-t" style={{ borderColor: 'var(--sheet-row-border)' }}>
                     {[
                       { label: 'Company', value: panel.project.company },
@@ -806,14 +743,12 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                       <div
                         key={label}
                         className="flex items-center justify-between py-3 border-b"
-                        style={{ borderColor: 'var(--sheet-row-border)' }}
-                      >
+                        style={{ borderColor: 'var(--sheet-row-border)' }}>
                         <span className="grid-label">{label}</span>
                         <span className="text-[12px] font-medium" style={{ color: 'var(--sheet-text)' }}>{value}</span>
                       </div>
                     ))}
                   </div>
-
                   <div className="pt-5">
                     <span className="grid-label block mb-3">Tools</span>
                     <div className="flex flex-wrap gap-2">
@@ -829,12 +764,10 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                     </div>
                   </div>
                 </div>
-
                 {/* Nav */}
                 <div
                   className="flex-shrink-0 px-5 py-4 border-t flex items-center justify-center"
-                  style={{ borderColor: 'var(--sheet-row-border)' }}
-                >
+                  style={{ borderColor: 'var(--sheet-row-border)' }}>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -843,8 +776,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                       }}
                       disabled={panel.job.projects.findIndex(p => p.id === panel.project.id) === 0}
                       className="btn-capsule-icon"
-                      aria-label="Previous project"
-                    >
+                      aria-label="Previous project">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M15 18l-6-6 6-6" />
                       </svg>
