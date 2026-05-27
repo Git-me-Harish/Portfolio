@@ -103,7 +103,7 @@ const achievements: Achievement[] = [
     issuer: 'National Tech Symposium',
     date: 'Dec 2024',
     category: 'award',
-    accentColor: '#f7b731',
+    accentColor: '#5EA3C0',
     description:
       'Awarded for designing and deploying an end-to-end autonomous ML pipeline that ingests raw sensor data, performs real-time feature engineering, and self-heals on drift detection — eliminating 80% of manual intervention across a production fleet.',
     impact: 'System serving 3M+ daily predictions with zero-downtime retraining cycles.',
@@ -117,7 +117,7 @@ const achievements: Achievement[] = [
     issuer: 'Amazon Web Services',
     date: 'Sep 2024',
     category: 'certification',
-    accentColor: '#ff9900',
+    accentColor: '#036DA4',
     description:
       'Passed the AWS Certified Machine Learning – Specialty exam covering data engineering, EDA, modeling, and ML implementation & operations on AWS.',
     impact: 'Architected SageMaker pipeline cutting model iteration time from 3 days to 4 hours.',
@@ -131,7 +131,7 @@ const achievements: Achievement[] = [
     issuer: 'IEEE Transactions on Neural Networks',
     date: 'Jun 2024',
     category: 'publication',
-    accentColor: '#4ecdc4',
+    accentColor: '#B9D9DC',
     description:
       'Co-authored paper on post-training quantization for transformers. Hybrid INT4/FP16 scheme preserves attention head precision while aggressively quantizing FFN layers.',
     impact: '3.2x inference speedup on A100. <0.8% accuracy drop on GLUE. 47+ citations in 6 months.',
@@ -145,7 +145,7 @@ const achievements: Achievement[] = [
     issuer: 'Government of India — Runner Up',
     date: 'Mar 2024',
     category: 'award',
-    accentColor: '#00cc88',
+    accentColor: 'var(--accent)',
     description:
       'Built an offline-capable crop disease detection app with MobileNetV3 + ONNX Runtime. Federated learning pipeline for continuous improvement without data centralisation.',
     impact: 'Pilot in 2 states. 10K+ scans/day. Model <8MB, sub-100ms inference on mid-range phones.',
@@ -172,7 +172,7 @@ const achievements: Achievement[] = [
     issuer: 'IIT Madras',
     date: 'Oct 2023',
     category: 'award',
-    accentColor: '#a55eea',
+    accentColor: '#024e78',
     description:
       'Led a 3-person team to build a gradient-boosted fraud detection model with graph embedding features using XGBoost + Node2Vec.',
     impact: 'Ranked #1 of 400+ teams. Precision@0.01 recall: 0.91 vs baseline of 0.73.',
@@ -417,7 +417,7 @@ export function AchievementsGrid({ isMobile }: AchievementsGridProps) {
 
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
-    : 'grid-card-desktop flex-shrink-0 w-[480px] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
+    : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
 
   const currentIndex = selected ? achievements.findIndex(a => a.id === selected.id) : -1
 

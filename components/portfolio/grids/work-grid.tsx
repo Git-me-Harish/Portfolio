@@ -38,10 +38,10 @@ const projects: WorkProject[] = [
       'Built a state-of-the-art transformer-based language model capable of understanding and generating human-like text across multiple domains. Focused on efficient training and inference for production deployment.',
     selectedWork:
       'Designed the attention mechanism variant that reduced memory footprint by 35% while maintaining model quality. Led the RLHF training pipeline that improved user satisfaction scores by 22%.',
-    color: '#00cc88',
-    accentColor: '#00cc88',
-    iconBg: '#0d2016',
-    iconText: '#00cc88',
+    color: '#036DA4',
+    accentColor: 'var(--accent)',
+    iconBg: 'var(--bg-elevated)',
+    iconText: 'var(--accent)',
     iconLetter: 'O',
     mainImage: '/work/nlm-main.jpg',
     galleryImages: ['/work/nlm-1.jpg', '/work/nlm-2.jpg', '/work/nlm-3.jpg', '/work/nlm-4.jpg'],
@@ -61,7 +61,7 @@ const projects: WorkProject[] = [
       'Engineered a novel multi-scale feature pyramid network that improved small object detection by 18%. Deployed across a fleet of 200+ test vehicles with 99.99% uptime.',
     color: '#4285f4',
     accentColor: '#4285f4',
-    iconBg: '#0e1525',
+    iconBg: 'var(--bg-elevated)',
     iconText: '#4285f4',
     iconLetter: 'G',
     mainImage: '/work/cv-main.jpg',
@@ -81,7 +81,7 @@ const projects: WorkProject[] = [
       'Introduced a two-tower neural retrieval model replacing legacy matrix factorization. Achieved +8% engagement lift in A/B test across 500M users.',
     color: '#0668e1',
     accentColor: '#0668e1',
-    iconBg: '#0e1625',
+    iconBg: 'var(--bg-elevated)',
     iconText: '#0668e1',
     iconLetter: 'M',
     mainImage: '/work/rec-main.jpg',
@@ -101,7 +101,7 @@ const projects: WorkProject[] = [
       'Built a graph neural network layer that captured transaction relationship patterns, lifting fraud recall by 14% without increasing false positive rate.',
     color: '#635bff',
     accentColor: '#635bff',
-    iconBg: '#11101e',
+    iconBg: 'var(--bg-elevated)',
     iconText: '#635bff',
     iconLetter: 'S',
     mainImage: '/work/fraud-main.jpg',
@@ -189,7 +189,7 @@ function Lightbox({
 
         <div
           className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono"
-          style={{ background: 'rgba(0,0,0,0.65)', color: '#bbb' }}
+          style={{ background: 'rgba(0,0,0,0.65)', color: 'var(--text-secondary)' }}
         >
           {idx + 1} / {images.length}
         </div>
@@ -284,7 +284,7 @@ export function WorkGrid({ isMobile }: WorkGridProps) {
    */
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
-    : 'grid-card-desktop flex-shrink-0 w-[480px] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
+    : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
 
   const currentIndex = selected ? projects.findIndex(p => p.id === selected.id) : -1
 
@@ -454,11 +454,11 @@ export function WorkGrid({ isMobile }: WorkGridProps) {
           <Lightbox
             images={lightbox.images}
             startIndex={lightbox.startIndex}
-            color={selected?.accentColor ?? '#00cc88'}
+            color={selected?.accentColor ?? 'var(--accent)'}
             onClose={() => setLightbox(null)}
           />
         )}
       </AnimatePresence>
     </>
   )
-}
+} 

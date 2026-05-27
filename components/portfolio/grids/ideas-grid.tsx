@@ -5,18 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { GridBottomSheet } from '../grid-bottom-sheet'
 import emailjs from '@emailjs/browser'
 
-// ─── EmailJS config ───────────────────────────────────────────────────────────
-// 1. Create a free account at https://www.emailjs.com
-// 2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
-// 3. Create an Email Template → copy the Template ID
-//    Template variables used: {{from_name}}, {{from_email}}, {{idea_title}},
-//    {{message}}, {{attachment_name}}  (attach file via template if needed)
-// 4. Copy your Public Key from Account → API Keys
-const EMAILJS_SERVICE_ID  = 'service_2zdm5wh'   // ← replace
-const EMAILJS_TEMPLATE_ID = 'template_8kb81vf'  // ← replace
-const EMAILJS_PUBLIC_KEY  = 'QowKEERwmPMyZvWQD'   // ← replace
-// ─────────────────────────────────────────────────────────────────────────────
-
+// EmailJS config:
+const EMAILJS_SERVICE_ID  = 'service_2zdm5wh'
+const EMAILJS_TEMPLATE_ID = 'template_8kb81vf' 
+const EMAILJS_PUBLIC_KEY  = 'QowKEERwmPMyZvWQD'   
 interface Idea {
   id: string
   title: string
@@ -37,8 +29,8 @@ const ideas: Idea[] = [
     title: 'LLM-powered Code Review',
     description: 'An intelligent code review assistant that understands context, tests, and team conventions.',
     caption: 'A bento-style developer tool that is infinitely customizable.',
-    accentColor: '#00cc88',
-    bgColor: '#0d1f18',
+    accentColor: 'var(--accent)',
+    bgColor: 'var(--bg-elevated)',
     tags: ['LangChain', 'GitHub API', 'Next.js'],
     stage: 'prototype',
     longDescription: 'Most code review tools flag style issues and obvious bugs but miss deeper problems — incorrect business logic, subtle race conditions, violations of team conventions. This tool would ingest your codebase context and PR history to give review comments that actually reflect how your team thinks.',
@@ -55,8 +47,8 @@ const ideas: Idea[] = [
     title: 'ML Model Marketplace',
     description: 'A platform for researchers to monetize and share trained models with proper attribution.',
     caption: 'Widget customizer to change size, shape & configuration.',
-    accentColor: '#a55eea',
-    bgColor: '#18101f',
+    accentColor: '#5EA3C0',
+    bgColor: 'var(--bg-elevated)',
     tags: ['HuggingFace', 'Stripe', 'Docker'],
     stage: 'concept',
     longDescription: 'Researchers spend months training models but monetization is an afterthought. This marketplace would let researchers list models with standardized benchmarks, versioning, and usage-based pricing — while buyers get reproducible environments and proper attribution.',
@@ -73,8 +65,8 @@ const ideas: Idea[] = [
     title: 'Real-time Feature Store',
     description: 'Zero-config streaming pipelines for ML feature engineering at scale.',
     caption: 'Visual pipeline builder with live data preview.',
-    accentColor: '#f7b731',
-    bgColor: '#1c1800',
+    accentColor: '#5EA3C0',
+    bgColor: 'var(--bg-elevated)',
     tags: ['Kafka', 'Redis', 'Python'],
     stage: 'building',
     longDescription: 'Feature stores exist but they are complex to operate. This would be a batteries-included feature store with automatic online/offline consistency, built-in drift detection, and a visual pipeline editor — deployable in one command on any cloud.',
@@ -91,8 +83,8 @@ const ideas: Idea[] = [
     title: 'AI Ethics Auditor',
     description: 'Open-source toolkit for evaluating and mitigating bias in ML models.',
     caption: 'Automated audit reports with bias scoring.',
-    accentColor: '#4ecdc4',
-    bgColor: '#0d1c1c',
+    accentColor: '#B9D9DC',
+    bgColor: 'var(--bg-elevated)',
     tags: ['Python', 'Fairlearn', 'SHAP'],
     stage: 'concept',
     longDescription: 'A practical, opinionated toolkit that makes fairness auditing a first-class part of the ML development cycle. Generates structured audit reports across demographic slices, integrates with existing CI/CD pipelines, and suggests mitigation strategies with impact estimates.',
@@ -107,9 +99,9 @@ const ideas: Idea[] = [
 ]
 
 const stageConfig = {
-  concept: { label: 'Concept', color: '#888', bg: '#88888820' },
-  prototype: { label: 'Prototype', color: '#f7b731', bg: '#f7b73120' },
-  building: { label: 'Building', color: '#00cc88', bg: '#00cc8820' },
+  concept: { label: 'Concept', color: '#888', bg: 'rgba(122,154,176,0.12)' },
+  prototype: { label: 'Prototype', color: '#5EA3C0', bg: 'rgba(94,163,192,0.12)' },
+  building: { label: 'Building', color: 'var(--accent)', bg: 'rgba(3,109,164,0.12)' },
 }
 
 // ─── Collaborate Form ─────────────────────────────────────────────────────────
@@ -193,7 +185,7 @@ function CollaborateForm() {
   // ── Shared input style (CSS-var-aware for dark/light) ──
   const inputCls = [
     'w-full px-3 py-2 rounded-lg text-[12px] outline-none transition-all',
-    'border focus:border-[#00cc88]',
+    'border focus:border-[var(--accent)]',
     'bg-[var(--collab-input-bg)] border-[var(--collab-input-border)]',
     'text-[var(--collab-input-text)] placeholder:text-[var(--collab-placeholder)]',
   ].join(' ')
@@ -204,11 +196,11 @@ function CollaborateForm() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="mt-2 p-5 rounded-xl border text-center"
-        style={{ background: '#0d1f18', borderColor: '#00cc8840' }}
+        style={{ background: 'var(--bg-elevated)', borderColor: 'rgba(3,109,164,0.25)' }}
       >
         <div className="w-9 h-9 rounded-full flex items-center justify-center mx-auto mb-3"
-          style={{ background: '#00cc8820' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00cc88" strokeWidth="2.5">
+          style={{ background: 'rgba(3,109,164,0.12)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
@@ -219,7 +211,7 @@ function CollaborateForm() {
         <button
           onClick={() => setStatus('idle')}
           className="mt-4 text-[11px] underline underline-offset-2"
-          style={{ color: '#00cc88' }}
+          style={{ color: 'var(--accent)' }}
         >
           Send another
         </button>
@@ -233,7 +225,7 @@ function CollaborateForm() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.4 }}
       className="mt-2 rounded-xl overflow-hidden relative"
-      style={{ border: '1px solid #00cc8818' }}
+      style={{ border: '1px solid rgba(3,109,164,0.10)' }}
     >
       {/* Animated grid background */}
       <div className="absolute inset-0" style={{ zIndex: 0 }} aria-hidden="true">
@@ -241,7 +233,7 @@ function CollaborateForm() {
           style={{ opacity: 0.35 }}>
           <defs>
             <pattern id="collab-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#00cc88" strokeWidth="0.4" />
+              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="var(--accent)" strokeWidth="0.4" />
             </pattern>
             <radialGradient id="collab-fade" cx="50%" cy="50%" r="55%">
               <stop offset="0%" stopColor="white" stopOpacity="1" />
@@ -259,7 +251,7 @@ function CollaborateForm() {
           style={{
             position: 'absolute', top: '10%', left: '10%',
             width: 120, height: 120, borderRadius: '50%',
-            background: 'radial-gradient(circle, #00cc8825 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(3,109,164,0.15) 0%, transparent 70%)',
             filter: 'blur(14px)',
           }}
         />
@@ -269,7 +261,7 @@ function CollaborateForm() {
           style={{
             position: 'absolute', bottom: '10%', right: '10%',
             width: 90, height: 90, borderRadius: '50%',
-            background: 'radial-gradient(circle, #00cc8818 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(3,109,164,0.10) 0%, transparent 70%)',
             filter: 'blur(10px)',
           }}
         />
@@ -365,18 +357,18 @@ function CollaborateForm() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px]"
-                    style={{ background: '#00cc8815', border: '1px solid #00cc8830' }}
+                    style={{ background: 'rgba(3,109,164,0.09)', border: '1px solid rgba(3,109,164,0.19)' }}
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00cc88" strokeWidth="2">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
                       <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                     </svg>
-                    <span style={{ color: '#00cc88' }}>{f.name}</span>
-                    <span style={{ color: '#00cc8880' }}>({fmtSize(f.size)})</span>
+                    <span style={{ color: 'var(--accent)' }}>{f.name}</span>
+                    <span style={{ color: 'rgba(3,109,164,0.50)' }}>({fmtSize(f.size)})</span>
                     <button
                       type="button"
                       onClick={() => removeFile(i)}
                       className="ml-0.5 hover:opacity-70 transition-opacity"
-                      style={{ color: '#00cc88' }}
+                      style={{ color: 'var(--accent)' }}
                     >
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                         <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -393,7 +385,7 @@ function CollaborateForm() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="w-full py-2.5 rounded-lg border border-dashed text-[11px] transition-all hover:border-[#00cc88] hover:text-[#00cc88]"
+              className="w-full py-2.5 rounded-lg border border-dashed text-[11px] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)]"
               style={{
                 borderColor: 'var(--collab-input-border)',
                 color: 'var(--collab-placeholder)',
@@ -438,7 +430,7 @@ function CollaborateForm() {
           type="submit"
           disabled={status === 'sending' || !name || !email || !message}
           className="w-full py-2.5 rounded-lg text-[12px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: '#00cc88', color: '#000' }}
+          style={{ background: 'var(--accent)', color: '#ffffff' }}
         >
           {status === 'sending' ? (
             <span className="flex items-center justify-center gap-2">
@@ -466,20 +458,20 @@ function CollaborateForm() {
 // (Add these inside your existing :root / [data-theme="dark"] / [data-theme="light"] blocks)
 //
 // Dark mode (already your default):
-//   --collab-bg:             #0d1f18;
-//   --collab-border:         #00cc8828;
-//   --collab-input-bg:       #0a1810;
-//   --collab-input-border:   #00cc8830;
+//   --collab-bg:             var(--bg-elevated);
+//   --collab-border:         rgba(3,109,164,0.17);
+//   --collab-input-bg:       var(--bg-card);
+//   --collab-input-border:   rgba(3,109,164,0.19);
 //   --collab-input-text:     #e8f5f0;
 //   --collab-placeholder:    #4a6b5c;
 //   --collab-dropzone-bg:    #0a180f;
 //
 // Light mode ([data-theme="light"] or .light):
 //   --collab-bg:             #f0faf5;
-//   --collab-border:         #00cc8840;
+//   --collab-border:         rgba(3,109,164,0.25);
 //   --collab-input-bg:       #ffffff;
 //   --collab-input-border:   #d0e8dc;
-//   --collab-input-text:     #0d1f18;
+//   --collab-input-text:     var(--bg-elevated);
 //   --collab-placeholder:    #8aada0;
 //   --collab-dropzone-bg:    #f8fdfb;
 // ─────────────────────────────────────────────────────────────────────────────
@@ -491,7 +483,7 @@ export function IdeasGrid({ isMobile }: IdeasGridProps) {
 
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
-    : 'grid-card-desktop flex-shrink-0 w-[480px] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
+    : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
 
   const currentIndex = selected ? ideas.findIndex(i => i.id === selected.id) : -1
 
@@ -628,7 +620,7 @@ export function IdeasGrid({ isMobile }: IdeasGridProps) {
                       <span
                         key={t}
                         className="px-2.5 py-1 rounded-lg text-[11px] font-medium"
-                        style={{ background: `${selected.accentColor}18`, color: selected.accentColor }}
+                        style={{ background: 'var(--accent-dim)', color: selected.accentColor }}
                       >
                         {t}
                       </span>

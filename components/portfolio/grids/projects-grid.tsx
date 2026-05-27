@@ -262,20 +262,20 @@ const sideProjects: SideProject[] = [
 /* ─ Status config ─ */
 
 const statusConfig = {
-  live:     { label: 'Live',     color: '#00cc88', bg: '#00cc8818' },
-  wip:      { label: 'WIP',      color: '#f7b731', bg: '#f7b73118' },
-  archived: { label: 'Archived', color: '#888888', bg: '#88888818' },
+  live:     { label: 'Live',     color: 'var(--accent)', bg: 'rgba(3,109,164,0.09)' },
+  wip:      { label: 'WIP',      color: '#5EA3C0', bg: 'rgba(94,163,192,0.10)' },
+  archived: { label: 'Archived', color: 'var(--text-muted)', bg: 'rgba(122,154,176,0.10)' },
 }
 
 /* ─ Accent colour per project ─ */
 
 const accentColors: Record<string, string> = {
-  '1': '#00cc88',
-  '2': '#ff6b6b',
-  '3': '#4ecdc4',
-  '4': '#f7b731',
-  '5': '#a55eea',
-  '6': '#26de81',
+  '1': 'var(--accent)',
+  '2': '#5EA3C0',
+  '3': '#B9D9DC',
+  '4': '#5EA3C0',
+  '5': '#025a89',
+  '6': '#036DA4',
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -473,7 +473,7 @@ export function ProjectsGrid({ isMobile }: ProjectsGridProps) {
 
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
-    : 'grid-card-desktop flex-shrink-0 w-[480px] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
+    : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
 
   const currentIndex = selected ? sideProjects.findIndex(p => p.id === selected.id) : -1
 

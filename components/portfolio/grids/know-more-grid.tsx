@@ -1212,7 +1212,7 @@ export function KnowMoreGrid({ isMobile }: KnowMoreGridProps) {
         let accumulated = ''
         let didSearch = false
         let searchPlatform: SearchPlatform = null
-        let richCard: RichCardType = null
+        let richCard: RichCardPayload = null
         while (true) {
           const { done, value } = await reader.read()
           if (done) break

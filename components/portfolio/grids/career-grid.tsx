@@ -110,9 +110,9 @@ const jobs: Job[] = [
     endDate: 'PRESENT',
     startYear: 2024,
     endYear: 2026,
-    color: '#00cc88',
-    iconBg: '#0d2016',
-    iconText: '#00cc88',
+    color: '#036DA4',
+    iconBg: 'var(--bg-elevated)',
+    iconText: 'var(--accent)',
     iconLetter: 'O',
     iconImage: '/icons/icon-1.png',
     description: 'Leading development of large language models and responsible AI systems across production services serving millions of users. A fast-paced, high-autonomy environment pushing the frontier of AI safety and capability.',
@@ -137,7 +137,7 @@ const jobs: Job[] = [
         year: '2024',
         contribution: 'Architecture & Lead',
         tools: ['Python', 'PyTorch', 'Redis', 'FastAPI'],
-        color: '#00cc88',
+        color: '#036DA4',
       },
       {
         id: 'p2',
@@ -148,7 +148,7 @@ const jobs: Job[] = [
         year: '2025',
         contribution: 'Full Ownership',
         tools: ['CUDA', 'C++', 'Python', 'Triton'],
-        color: '#00cc88',
+        color: '#036DA4',
       },
     ],
   },
@@ -162,7 +162,7 @@ const jobs: Job[] = [
     startYear: 2022,
     endYear: 2023,
     color: '#4285f4',
-    iconBg: '#0e1525',
+    iconBg: 'var(--bg-elevated)',
     iconText: '#4285f4',
     iconLetter: 'G',
     iconImage: '/icons/icon-2.png',
@@ -213,7 +213,7 @@ const jobs: Job[] = [
     startYear: 2020,
     endYear: 2022,
     color: '#0668e1',
-    iconBg: '#0e1625',
+    iconBg: 'var(--bg-elevated)',
     iconText: '#0668e1',
     iconLetter: 'M',
     iconImage: '/icons/icon-3.png',
@@ -253,7 +253,7 @@ const jobs: Job[] = [
     startYear: 2019,
     endYear: 2019,
     color: '#76b900',
-    iconBg: '#111a00',
+    iconBg: 'var(--bg-elevated)',
     iconText: '#76b900',
     iconLetter: 'N',
     iconImage: '/icons/icon-4.png',
@@ -292,9 +292,9 @@ const jobs: Job[] = [
     endDate: 'MAY 18',
     startYear: 2018,
     endYear: 2018,
-    color: '#f59e0b',
-    iconBg: '#1c1500',
-    iconText: '#f59e0b',
+    color: '#5EA3C0',
+    iconBg: 'var(--bg-elevated)',
+    iconText: 'var(--accent-light)',
     iconLetter: 'H',
     iconImage: '/icons/school.png',
     isEducation: true,
@@ -411,7 +411,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
 
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
-    : 'grid-card-desktop flex-shrink-0 w-[480px] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
+    : 'grid-card-desktop flex-shrink-0 w-[clamp(360px,28vw,500px)] h-[calc(100vh-88px)] rounded-2xl border overflow-hidden flex flex-col'
 
   // Split jobs from education markers
   const regularJobs = jobs.filter(j => !j.isEducation)
@@ -529,7 +529,7 @@ export function CareerGrid({ isMobile }: CareerGridProps) {
                     style={{
                       writingMode: 'vertical-rl',
                       transform: 'rotate(180deg)',
-                      color: 'var(--accent)',
+                      color: '#036DA4',
                       opacity: 0.9,
                       lineHeight: 1,
                     }}
