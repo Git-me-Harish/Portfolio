@@ -293,7 +293,7 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                 <div
                   className="w-full rounded-xl overflow-hidden mb-5 relative border"
                   style={{ height: 220, borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
-                  <Image src="/photo.jpeg" alt="Sri Harish" fill className="object-cover" priority />
+                  <Image src="/photo.jpg" alt="Sri Harish" fill className="object-cover" priority />
                   <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <pattern id="dp" width="4" height="4" patternUnits="userSpaceOnUse">
