@@ -120,14 +120,14 @@ function AnimatedHighlight({
         }}
         initial={{ scaleX: 0 }}
         animate={visible ? { scaleX: 1 } : { scaleX: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}/>
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }} />
       <motion.span
         aria-hidden
         className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
         style={{ background: color, opacity: 0.7 }}
         initial={{ scaleX: 0 }}
         animate={visible ? { scaleX: 1 } : { scaleX: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}/>
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.35 }} />
       <span className="relative z-10">{children}</span>
     </span>
   )
@@ -258,8 +258,8 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
   )
   const bioHighlights: Highlight[] = [
     { text: 'deep learning, NLP', color: '#036DA4' },
-    { text: 'production ML pipelines', color: '#5EA3C0' },  
-    { text: 'full-stack engineering', color: '#024e78' },   
+    { text: 'production ML pipelines', color: '#5EA3C0' },
+    { text: 'full-stack engineering', color: '#024e78' },
   ]
   const cls = isMobile
     ? 'w-full rounded-2xl border overflow-hidden flex flex-col'
@@ -293,7 +293,7 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                 <div
                   className="w-full rounded-xl overflow-hidden mb-5 relative border"
                   style={{ height: 220, borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
-                  <Image src="/photo.jpeg" alt="Sri Harish" fill className="object-cover" priority />
+                  <Image src="/photo.jpg" alt="Sri Harish" fill className="object-cover" priority />
                   <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <pattern id="dp" width="4" height="4" patternUnits="userSpaceOnUse">
@@ -307,7 +307,7 @@ export function AboutGrid({ isMobile }: AboutGridProps) {
                     className="absolute inset-0"
                     style={{ backgroundImage: 'linear-gradient(to bottom, transparent 40%, rgba(3,109,164,0.06) 50%, transparent 60%)' }}
                     animate={{ y: ['-100%', '200%'] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}/>
+                    transition={{ duration: 5, repeat: Infinity, ease: 'linear' }} />
                 </div>
                 <h2 className="text-[16px] font-semibold leading-snug mb-3" style={{ color: 'var(--text-primary)' }}>
                   {"Hey, I'm [Sri Harish]. I build intelligent systems and extract insights from data."}
